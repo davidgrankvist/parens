@@ -3,7 +3,7 @@
 
 bool StringEquals(String s1, String s2) {
     return s1.length == s2.length
-        && (s1.start == s2.start || memcmp(s1.start, s2.start, s1.length));
+        && (s1.start == s2.start || memcmp(s1.start, s2.start, s1.length) == 0);
 }
 
 String MakeString(const char* str) {

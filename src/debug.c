@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "common.h"
 
-static const char* MapTokenTypeToStr(TokenType type) {
+const char* MapTokenTypeToStr(TokenType type) {
     switch(type) {
         case TOKEN_PAREN_START: return "TOKEN_PAREN_START";
         case TOKEN_PAREN_END: return "TOKEN_PAREN_END";
@@ -34,5 +34,10 @@ void PrintToken(Token token) {
         printf(" - ");
         fwrite(token.str.start, 1, token.str.length, stdout);
     }
+    printf("\n");
+}
+
+void PrintString(String s) {
+    fwrite(s.start, 1, s.length, stdout);
     printf("\n");
 }

@@ -99,7 +99,7 @@ static Token ConsumeNumber() {
 static TokenType TryEmitKeyword(size_t startOffset, String keywordPart, TokenType keywordType) {
     String subTokenString = {
         .start = tokenStart + startOffset,
-        .length = current - tokenStart + 1 - startOffset,
+        .length = current - tokenStart + - startOffset,
     };
     if (StringEquals(subTokenString, keywordPart)) {
         return keywordType;
@@ -124,12 +124,12 @@ static Token ConsumeKeywordOrSymbol() {
 }
 
 static Token ConsumeString() {
-    while(Peek() != '"' && IsAtEnd()) {
+    while(Peek() != '"' && !IsAtEnd()) {
         Advance();
     }
 
     if (Peek() != '"') {
-        EmitError("Unterminated string.");
+        return EmitError("Unterminated string.");
     }
     Advance();
 

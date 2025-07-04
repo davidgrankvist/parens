@@ -14,6 +14,8 @@ typedef struct {
 bool StringEquals(String s1, String s2);
 String MakeString(const char* str);
 
+void PrintString(String s);
+
 // -- Tokens --
 
 typedef enum {
@@ -35,6 +37,7 @@ typedef struct {
     int col;
 } Token;
 
+const char* MapTokenTypeToStr(TokenType type);
 void PrintTokenType(TokenType type);
 void PrintToken(Token token);
 

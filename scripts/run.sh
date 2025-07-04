@@ -1,3 +1,3 @@
 #!/usr/bin/sh
 
-./bin/parens
+./bin/parens/parens

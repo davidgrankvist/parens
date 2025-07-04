@@ -1,3 +1,3 @@
 #!/usr/bin/sh
 
-gdb ./bin/parens
+gdb ./bin/parens/parens
