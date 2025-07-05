@@ -1,21 +1,21 @@
 #include "tokenizer.h"
 
-char* current = NULL;
-char* tokenStart = NULL;
-int line;
-int col;
+static char* current = NULL;
+static char* tokenStart = NULL;
+static int line;
+static int col;
+
+static char Peek() {
+    return *current;
+}
 
 static char Advance() {
-    char c = *current;
-    if (*current != '\0') {
+    char c = Peek();
+    if (c != '\0') {
         current++;
         col++;
     }
     return c;
-}
-
-static char Peek() {
-    return *current;
 }
 
 void InitTokenizer(char* str) {

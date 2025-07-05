@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "common.h"
+#include "parser.h"
 
 const char* MapTokenTypeToStr(TokenType type) {
     switch(type) {
@@ -21,10 +22,18 @@ void PrintTokenType(TokenType type) {
     printf("%s", typeStr);
 }
 
+void PrintString(String s) {
+    fwrite(s.start, 1, s.length, stdout);
+}
+
+void PrintStringErr(String s) {
+    fwrite(s.start, 1, s.length, stderr);
+}
+
 void PrintToken(Token token) {
     if (token.type == TOKEN_ERROR) {
         fprintf(stderr, "Error at %d,%d - ", token.line, token.col);
-        fwrite(token.str.start, 1, token.str.length, stderr);
+        PrintStringErr(token.str);
         fprintf(stderr, "\n");
         return;
     }
@@ -32,12 +41,22 @@ void PrintToken(Token token) {
     printf("Token %s at %d,%d", typeStr, token.line, token.col);
     if (token.type != TOKEN_EOF) {
         printf(" - ");
-        fwrite(token.str.start, 1, token.str.length, stdout);
+        PrintString(token.str);
     }
     printf("\n");
 }
 
-void PrintString(String s) {
-    fwrite(s.start, 1, s.length, stdout);
-    printf("\n");
+void PrintParseResult(ParseResult result) {
+    if (result.type == PARSE_ERROR) {
+        ParseError error = result.as.error;
+        fprintf(stderr, "Parse error: ");
+        PrintStringErr(error.message);
+        fprintf(stderr, "\n");
+
+        if (error.token != NULL) {
+            PrintToken(*(error.token));
+        }
+        return;
+    }
+    printf("Parsed AST successfully\n");
 }
