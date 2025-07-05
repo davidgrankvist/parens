@@ -28,5 +28,6 @@ typedef struct {
 ParseResult ParseTokens(TokenDa tokens);
 
 void PrintParseResult(ParseResult result);
+void PrintAst(Ast* ast);
 
 #endif

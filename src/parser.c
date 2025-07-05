@@ -126,56 +126,66 @@ static ParseResult ParseAtom() {
             break;
     }
 
+    Advance();
     return result;
 }
 
 /*
- * Parses a cons list. Proper list syntax has an implicit nil.
- * (1 2) -> (1 . (2 . nil))
+ * Parses the tail in proper list syntax.
+ * Adds the implicit nil.
+ *
+ * For example, given (1 2 3) this function
+ * will be called for the 2 3 part and return
+ * (2 . (3 . nil))
+ */
+static ParseResult ParseListElements() {
+    // add implicit nil if we reached the end
+    if (Check(TOKEN_PAREN_END)) {
+        return EmitParseSuccess(CreateAtom(MAKE_NIL()));
+    }
+
+    ParseResult head = ParseExpr();
+    if (head.type == PARSE_ERROR) {
+        return head;
+    }
+    ParseResult tail = ParseListElements();
+    if (tail.type == PARSE_ERROR) {
+        return tail;
+    }
+
+    Ast* cons = CreateCons(head.as.success.ast, tail.as.success.ast);
+    return EmitParseSuccess(cons);
+}
+
+/*
+ * Parses either an explicit cons list like
+ * (1 . (2 . 3))
+ *
+ * Or a proper list with implicit nil
+ * (1 2 3) = (1 . (2 . (3 . nil))
  */
 static ParseResult ParseList() {
     ParseResult head = ParseExpr();
     if (head.type == PARSE_ERROR) {
         return head;
     }
-    Ast* cons = NULL;
 
-    /*
-     * single value list
-     * (1) -> (1 . nil)
-     */
-    if (Match(TOKEN_PAREN_END)) {
-        cons = CreateCons(head.as.success.ast, CreateAtom(MAKE_NIL()));
-        return EmitParseSuccess(cons);
+    ParseResult tail = {0};
+    if (Match(TOKEN_CONS)) {
+        tail = ParseExpr();
+    } else {
+        tail = ParseListElements();
     }
 
-    bool shouldAppendNil = !Match(TOKEN_CONS);
-
-    ParseResult expr = ParseExpr();
-    if (expr.type == PARSE_ERROR) {
-        return expr;
-    }
-
-    Ast* tail = expr.as.success.ast;
-    while (!Check(TOKEN_PAREN_END) && !IsDone()) {
-        expr = ParseExpr();
-        if (expr.type == PARSE_ERROR) {
-            return expr;
-        }
-
-        tail = CreateCons(tail, expr.as.success.ast);
-        Advance();
-    }
-
-    if (shouldAppendNil) {
-        tail = CreateCons(tail, CreateAtom(MAKE_NIL()));
+    if (tail.type == PARSE_ERROR) {
+        return tail;
     }
 
     if (!Match(TOKEN_PAREN_END)) {
         return EmitParseError("Unterminated list parentheses");
     }
 
-    cons = CreateCons(head.as.success.ast, tail);
+    Ast* cons = CreateCons(head.as.success.ast, tail.as.success.ast);
     return EmitParseSuccess(cons);
 }
 

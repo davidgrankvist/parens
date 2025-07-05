@@ -62,4 +62,11 @@ struct Ast {
     } as;
 };
 
+typedef struct {
+    void (*VisitAtom)(Ast* ast, void* ctx);
+    void (*VisitCons)(Ast* ast, void* ctx);
+} AstVisitor;
+
+void VisitAst(Ast* ast, AstVisitor* visitor, void* ctx);
+
 #endif

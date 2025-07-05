@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include "common.h"
 #include "parser.h"
 
@@ -46,6 +47,57 @@ void PrintToken(Token token) {
     printf("\n");
 }
 
+static void PrintAstHelper(Ast* ast, void* ctx);
+
+static void PrintValue(Value value) {
+    switch(value.type) {
+        case VALUE_NIL:
+            printf("nil");
+            break;
+        case VALUE_F64:
+            printf("%g", value.as.f64);
+            break;
+        case VALUE_OBJECT:
+            if (value.as.object->type == OBJECT_STRING) {
+                PrintString(value.as.object->as.string);
+            }
+            printf("UNKNOWN");
+            break;
+        default:
+            printf("UNKNOWN");
+            break;
+    }
+}
+
+static void PrintAstAtom(Ast* ast, void* ctx) {
+    int indent = (int)(intptr_t)ctx;
+    AstAtom atom = ast->as.atom;
+    printf("%*s", indent, "");
+    PrintValue(atom.value);
+    printf("\n");
+}
+
+static void PrintAstCons(Ast* ast, void* ctx) {
+    int indent = (int)(intptr_t)ctx;
+    AstCons cons = ast->as.cons;
+    printf("%*s(\n", indent, "");
+    PrintAstHelper(cons.head, (void*)(intptr_t)(indent+2));
+    PrintAstHelper(cons.tail, (void*)(intptr_t)(indent+2));
+    printf("%*s)\n", indent, "");
+}
+
+static AstVisitor printVisitor = {
+    .VisitAtom = &PrintAstAtom,
+    .VisitCons = &PrintAstCons,
+};
+
+static void PrintAstHelper(Ast* ast, void* ctx) {
+    VisitAst(ast, &printVisitor, ctx);
+}
+void PrintAst(Ast* ast) {
+    PrintAstHelper(ast, (void*)0);
+}
+
 void PrintParseResult(ParseResult result) {
     if (result.type == PARSE_ERROR) {
         ParseError error = result.as.error;
@@ -59,4 +111,5 @@ void PrintParseResult(ParseResult result) {
         return;
     }
     printf("Parsed AST successfully\n");
+    PrintAst(result.as.success.ast);
 }
