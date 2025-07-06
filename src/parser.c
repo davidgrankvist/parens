@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "parser.h"
 #include "asserts.h"
+#include "memory.h"
 
 static TokenDa tokens = {0};
 static size_t currentIndex = 0;
@@ -68,7 +69,7 @@ static ParseResult EmitParseSuccess(Ast* ast) {
 
 Ast* CreateAtom(Value value) {
     //TODO(memory): Never freed. Use arena?
-    Ast* ast = calloc(1, sizeof(Ast));
+    Ast* ast = ALLOCATE_OBJ(Ast);
     *ast = (Ast) {
         .type = AST_ATOM,
         .token = Peek(),
@@ -82,7 +83,7 @@ Ast* CreateAtom(Value value) {
 
 Ast* CreateCons(Ast* head, Ast* tail) {
     //TODO(memory): Never freed. Use arena?
-    Ast* ast = calloc(1, sizeof(Ast));
+    Ast* ast = ALLOCATE_OBJ(Ast);
     *ast = (Ast) {
         .type = AST_CONS,
             .token = head->token,
@@ -106,7 +107,7 @@ static ParseResult ParseF64() {
 
 Object* CreateStringObject(String s) {
     //TODO(memory): Never freed. Use arena?
-    Object* obj = calloc(1, sizeof(Object));
+    Object* obj = ALLOCATE_OBJ(Object);
     *obj = (Object) {
         .type = OBJECT_STRING,
         .as.string = s,
@@ -117,7 +118,7 @@ Object* CreateStringObject(String s) {
 
 Object* CreateSymbolObject(String s) {
     //TODO(memory): Never freed. Use arena?
-    Object* obj = calloc(1, sizeof(Object));
+    Object* obj = ALLOCATE_OBJ(Object);
     *obj = (Object) {
         .type = OBJECT_SYMBOL,
         .as.symbol = s,

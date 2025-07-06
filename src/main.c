@@ -9,10 +9,8 @@ int main() {
 
     InitTokenizer(program);
 
-    // use external buffer while DA implementation is unfinished
-    Token tokenBuf[100] = {0};
+    //TODO(memory): Never freed. Use arena?
     TokenDa tokens = DA_MAKE_CAPACITY(Token, 100);
-    tokens.items = tokenBuf;
 
     Token token = {0};
     do {

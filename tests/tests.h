@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "asserts.h"
 
+void DynamicArrayTests();
 void TokenizerTests();
 void ParserTests();
 

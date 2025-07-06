@@ -3,10 +3,9 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "asserts.h"
+#include "memory.h"
 
 // -- Dynamic arrays --
-// TODO(incomplete): Make dynamic
 
 #define DA_DECLARE(type) \
     typedef struct { \
@@ -15,21 +14,39 @@
         size_t capacity; \
     } type##Da
 
-#define DA_DEFAULT_CAPACITY 0
+#define DA_DEFAULT_CAPACITY 8
+#define DA_RESIZE_FACTOR 2
 
-#define DA_MAKE_CAPACITY(type, capacity) \
-    (type##Da){ NULL, 0, capacity }
+#define DA_MAKE_CAPACITY(type, cap) \
+    (type##Da){ \
+        .items = ALLOCATE_NEW_ARR(type, cap), \
+        .count = 0,  \
+        .capacity = cap \
+    }
 
-#define DA_MAKE(type) \
-    DA_MAKE(type, DA_DEFAULT_CAPACITY)
+#define DA_MAKE_DEFAULT(type) DA_MAKE_CAPACITY(type, DA_DEFAULT_CAPACITY)
 
 #define DA_APPEND(da, item) \
     do { \
         if ((da)->count + 1 > (da)->capacity) { \
-            AssertFail("Resizing is not implemented"); \
+            (da)->capacity *= DA_RESIZE_FACTOR; \
+            (da)->items = RESIZE_ARR((da)->items, (da)->capacity); \
         } \
         (da)->items[(da)->count++] = item; \
     } while(0)
+
+#define DA_REMOVE_UNORDERED(da, index) \
+    do { \
+        (da)->items[index] = (da)->items[--(da)->count]; \
+    } while(0)
+
+#define DA_FREE(da) \
+    do { \
+        (da)->count = 0; \
+        (da)->capacity = 0; \
+        FreeMemory((da)->items); \
+        (da)->items = NULL; \
+    } while(0);
 
 // -- Strings --
 

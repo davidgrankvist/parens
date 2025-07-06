@@ -62,18 +62,13 @@ static bool AstEquals(Ast* first, Ast* second) {
 }
 
 #define PARSE_TEST_TOKEN_MAX 100
-static Token tokenBuf[PARSE_TEST_TOKEN_MAX] = {0};
 
 static void RunTestCase(ParserTestCase testCase) {
     printf("%s\n", testCase.desc);
 
     InitTokenizer(testCase.input);
 
-    TokenDa tokens = {
-        .items = tokenBuf,
-        .capacity = PARSE_TEST_TOKEN_MAX,
-        .count = 0,
-    };
+    TokenDa tokens = DA_MAKE_CAPACITY(Token, PARSE_TEST_TOKEN_MAX);
 
     Token token = {0};
     do {
