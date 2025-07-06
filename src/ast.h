@@ -7,12 +7,14 @@
 
 typedef enum {
     OBJECT_STRING,
+    OBJECT_SYMBOL,
 } ObjectType;
 
 typedef struct {
    ObjectType type;
    union {
        String string;
+       String symbol;
    } as;
 } Object;
 
@@ -30,10 +32,18 @@ typedef struct {
     } as;
 } Value;
 
-#define MAKE_NIL() (Value) \
-    { .type = VALUE_NIL }
-#define MAKE_F64(x) \
-    (Value) { .type = VALUE_F64, .as = { .f64 = x } }
+#define MAKE_NIL() (Value) { .type = VALUE_NIL }
+#define MAKE_F64(x) (Value) { .type = VALUE_F64, .as.f64 = x }
+#define MAKE_OBJECT(obj) (Value) { .type = VALUE_OBJECT, .as.object = obj }
+#define MAKE_STRING(s) MAKE_OBJECT(CreateStringObject(s))
+#define MAKE_SYMBOL(s) MAKE_OBJECT(CreateSymbolObject(s))
+
+#define MAKE_STRING_CHARS(cs) MAKE_STRING(MakeString(cs))
+#define MAKE_SYMBOL_CHARS(cs) MAKE_SYMBOL(MakeString(cs))
+
+Object* CreateStringObject(String s);
+Object* CreateSymbolObject(String s);
+
 
 // -- AST --
 
@@ -68,5 +78,8 @@ typedef struct {
 } AstVisitor;
 
 void VisitAst(Ast* ast, AstVisitor* visitor, void* ctx);
+
+Ast* CreateAtom(Value value);
+Ast* CreateCons(Ast* head, Ast* tail);
 
 #endif

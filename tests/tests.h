@@ -6,5 +6,9 @@
 #include "asserts.h"
 
 void TokenizerTests();
+void ParserTests();
+
+#define PRINT_TEST_TITLE() printf("--- %s ---\n", __func__)
+#define PRINT_TEST_FAILURE() printf("=== TEST FAILURE ===\n")
 
 #endif

@@ -66,7 +66,7 @@ static ParseResult EmitParseSuccess(Ast* ast) {
     return result;
 }
 
-static Ast* CreateAtom(Value value) {
+Ast* CreateAtom(Value value) {
     //TODO(memory): Never freed. Use arena?
     Ast* ast = calloc(1, sizeof(Ast));
     *ast = (Ast) {
@@ -80,7 +80,7 @@ static Ast* CreateAtom(Value value) {
     return ast;
 }
 
-static Ast* CreateCons(Ast* head, Ast* tail) {
+Ast* CreateCons(Ast* head, Ast* tail) {
     //TODO(memory): Never freed. Use arena?
     Ast* ast = calloc(1, sizeof(Ast));
     *ast = (Ast) {
@@ -104,6 +104,44 @@ static ParseResult ParseF64() {
     return EmitParseSuccess(CreateAtom(val));
 }
 
+Object* CreateStringObject(String s) {
+    //TODO(memory): Never freed. Use arena?
+    Object* obj = calloc(1, sizeof(Object));
+    *obj = (Object) {
+        .type = OBJECT_STRING,
+        .as.string = s,
+    };
+
+    return obj;
+}
+
+Object* CreateSymbolObject(String s) {
+    //TODO(memory): Never freed. Use arena?
+    Object* obj = calloc(1, sizeof(Object));
+    *obj = (Object) {
+        .type = OBJECT_SYMBOL,
+        .as.symbol = s,
+    };
+
+    return obj;
+}
+
+static ParseResult ParseSymbol() {
+    String s = Peek().str;
+    Ast* ast = CreateAtom(MAKE_SYMBOL(s));
+    return EmitParseSuccess(ast);
+}
+
+static ParseResult ParseString() {
+    String quotedStr = Peek().str;
+    String unquotedStr = {
+        .start = &quotedStr.start[1],
+        .length = quotedStr.length - 2,
+    };
+    Ast* ast = CreateAtom(MAKE_STRING(unquotedStr));
+    return EmitParseSuccess(ast);
+}
+
 static ParseResult ParseAtom() {
     ParseResult result = {0};
     Ast* ast = NULL;
@@ -115,11 +153,11 @@ static ParseResult ParseAtom() {
         case TOKEN_NUMBER:
             result = ParseF64();
             break;
-        case TOKEN_SYMBOL:
-            result = EmitParseError("Symbol atoms are not implemented");
-            break;
         case TOKEN_STRING:
-            result = EmitParseError("String atoms are not implemented");
+            result = ParseString();
+            break;
+        case TOKEN_SYMBOL:
+            result = ParseSymbol();
             break;
         default:
             result = EmitParseError("Unexpected token while parsing atom");
@@ -200,6 +238,10 @@ static ParseResult ParseExpr() {
 ParseResult ParseTokens(TokenDa ts) {
     tokens = ts;
     currentIndex = 0;
+
+    if (IsDone()) {
+        return EmitParseError("Nothing to parse.");
+    }
 
     return ParseExpr();
 }

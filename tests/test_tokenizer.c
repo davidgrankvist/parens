@@ -30,7 +30,7 @@ static void RunTestCase(TokenizerTestCase testCase) {
 }
 
 void TokenizerTests() {
-    printf("--- Tokenizer tests ---\n");
+    PRINT_TEST_TITLE();
 
     RunTestCase((TokenizerTestCase){
         .desc = "Only EOF",

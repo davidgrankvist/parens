@@ -2,5 +2,7 @@
 
 int main() {
     TokenizerTests();
-    printf("All tests passed.\n");
+    ParserTests();
+    printf("--------------\n");
+    printf("SUCCESS\n");
 }

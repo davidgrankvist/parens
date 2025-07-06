@@ -59,7 +59,13 @@ static void PrintValue(Value value) {
             break;
         case VALUE_OBJECT:
             if (value.as.object->type == OBJECT_STRING) {
+                printf("\"");
                 PrintString(value.as.object->as.string);
+                printf("\"");
+                break;
+            } if (value.as.object->type == OBJECT_SYMBOL) {
+                PrintString(value.as.object->as.symbol);
+                break;
             }
             printf("UNKNOWN");
             break;
@@ -94,7 +100,12 @@ static AstVisitor printVisitor = {
 static void PrintAstHelper(Ast* ast, void* ctx) {
     VisitAst(ast, &printVisitor, ctx);
 }
+
 void PrintAst(Ast* ast) {
+    if (ast == NULL) {
+        printf("NULL\n");
+        return;
+    }
     PrintAstHelper(ast, (void*)0);
 }
 
@@ -112,4 +123,12 @@ void PrintParseResult(ParseResult result) {
     }
     printf("Parsed AST successfully\n");
     PrintAst(result.as.success.ast);
+}
+
+const char* MapParseResultTypeToStr(ParseResultType type) {
+    switch(type) {
+        case PARSE_SUCCESS: return "PARSE_SUCCESS";
+        case PARSE_ERROR: return "PARSE_ERROR";
+        default: return NULL;
+    }
 }

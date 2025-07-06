@@ -29,5 +29,6 @@ ParseResult ParseTokens(TokenDa tokens);
 
 void PrintParseResult(ParseResult result);
 void PrintAst(Ast* ast);
+const char* MapParseResultTypeToStr(ParseResultType type);
 
 #endif
