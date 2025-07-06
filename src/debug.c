@@ -3,6 +3,26 @@
 #include "common.h"
 #include "parser.h"
 
+static bool shouldAbort = true;
+static bool shouldAssert = true;
+
+bool ShouldAssertAbort() {
+    return shouldAbort;
+}
+
+bool ShouldAssert() {
+    return shouldAssert;
+}
+
+#ifdef IS_RUNNING_TESTS
+void SetAssertAbortFromTest(bool enabled) {
+    shouldAbort = enabled;
+}
+void SetAssertEnabledFromTest(bool enabled) {
+    shouldAssert = enabled;
+}
+#endif
+
 const char* MapTokenTypeToStr(TokenType type) {
     switch(type) {
         case TOKEN_PAREN_START: return "TOKEN_PAREN_START";

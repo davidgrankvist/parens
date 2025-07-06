@@ -2,6 +2,7 @@
 
 int main() {
     DynamicArrayTests();
+    BumpAllocatorTests();
     TokenizerTests();
     ParserTests();
     printf("--------------\n");

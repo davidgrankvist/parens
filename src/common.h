@@ -26,14 +26,17 @@
 
 #define DA_MAKE_DEFAULT(type) DA_MAKE_CAPACITY(type, DA_DEFAULT_CAPACITY)
 
-#define DA_APPEND(da, item) \
+#define DA_APPEND_RESIZE(da, item, newCap) \
     do { \
         if ((da)->count + 1 > (da)->capacity) { \
-            (da)->capacity *= DA_RESIZE_FACTOR; \
+            (da)->capacity = newCap; \
             (da)->items = RESIZE_ARR((da)->items, (da)->capacity); \
         } \
         (da)->items[(da)->count++] = item; \
     } while(0)
+
+#define DA_APPEND(da, item) \
+    DA_APPEND_RESIZE(da, item, (da)->capacity * DA_RESIZE_FACTOR)
 
 #define DA_REMOVE_UNORDERED(da, index) \
     do { \

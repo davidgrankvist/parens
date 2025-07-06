@@ -12,4 +12,31 @@ void FreeMemory(void* ptr);
 #define ALLOCATE_NEW_ARR(type, count) ALLOCATE_ARR(type, NULL, count)
 #define RESIZE_ARR(items, newCount) AllocateArray(items, newCount, sizeof(items[0]))
 
+// -- Arena allocation --
+
+typedef struct Allocator Allocator;
+
+void* ArenaAllocate(size_t bytes, Allocator* allocator);
+void ArenaReset(Allocator* allocator);
+void ArenaFree(Allocator* allocator);
+
+void ArenaDebug(Allocator* allocator);
+
+/*
+ * BUMP ALLOCATOR
+ *
+ * This allocator uses an append-only strategy. Bytes are grouped into
+ * pages. When a page is full, the next one is used. When all pages are full,
+ * the arena grows by one page.
+ *
+ * There is some fragmentation, because all bytes of an object are always
+ * allocated within the same page. If there is not enough room in
+ * the current page to allocate N bytes, then all of those N bytes end up
+ * in the next page, leaving the end of the previos page unused.
+ *
+ * When resetting the allocator, it returns to having the initial
+ * number of pages and any extra pages that were created.
+ */
+Allocator* CreateBumpAllocator(size_t pageSize, size_t initialNumPages);
+
 #endif

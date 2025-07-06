@@ -6,6 +6,7 @@
 #include "asserts.h"
 
 void DynamicArrayTests();
+void BumpAllocatorTests();
 void TokenizerTests();
 void ParserTests();
 
