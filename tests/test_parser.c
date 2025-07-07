@@ -62,6 +62,7 @@ static bool AstEquals(Ast* first, Ast* second) {
 }
 
 #define PARSE_TEST_TOKEN_MAX 100
+#define PARSE_TEST_AST_PAGE_SIZE 100
 
 static void RunTestCase(ParserTestCase testCase) {
     printf("%s\n", testCase.desc);
@@ -78,7 +79,7 @@ static void RunTestCase(ParserTestCase testCase) {
 
     Assert(token.type != TOKEN_ERROR, "Failed to tokenize");
 
-    Allocator* allocator = CreateHeapAllocator();
+    Allocator* allocator = CreateBumpAllocator(PARSE_TEST_AST_PAGE_SIZE, 1);
     ParseResult result = ParseTokens(tokens, allocator);
 
     if (result.type != testCase.expected.type) {

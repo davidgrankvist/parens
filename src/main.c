@@ -4,7 +4,10 @@
 #include "parser.h"
 #include "memory.h"
 
+// Some small values for now
 #define TOKENS_DEFAULT_CAPACITY 256
+#define AST_PAGE_SIZE 256
+#define AST_NUM_PAGES 1
 
 int main() {
     char* program = "(1 2 3)";
@@ -27,7 +30,7 @@ int main() {
     printf("Tokenization success! Found %ld tokens\n", tokens.count);
 
     printf("Parsing tokens\n");
-    Allocator* allocator = CreateHeapAllocator();
+    Allocator* allocator = CreateBumpAllocator(AST_PAGE_SIZE, AST_NUM_PAGES);
     ParseResult result = ParseTokens(tokens, allocator);
     PrintParseResult(result);
 }
