@@ -169,11 +169,11 @@ static void TestSimpleConsIsSequentialSinglePage(Allocator* allocator, ParseResu
 
     size_t totalSize = PARSE_TEST_SIMPLE_CONS_SIZE;
 
-    char* lastNodeStart = (char*)result.as.success.ast;
-    char* lastNodeEnd = lastNodeStart + sizeof(Ast);
-    char* firstNodeStart = lastNodeEnd - totalSize;
+    Byte* lastNodeStart = (Byte*)result.as.success.ast;
+    Byte* lastNodeEnd = lastNodeStart + sizeof(Ast);
+    Byte* firstNodeStart = lastNodeEnd - totalSize;
 
-    char* current = firstNodeStart;
+    Byte* current = firstNodeStart;
 
     AssertExpectedSymbol((Object*)current, "a", 1);
 
@@ -216,14 +216,14 @@ static void TestSimpleConsIsSequentialSinglePage(Allocator* allocator, ParseResu
 static void TestSimpleConsIsSequentialMultiPage(Allocator* allocator, ParseResult result) {
     Assert(result.type == PARSE_SUCCESS, "Expected parse success");
 
-    char* lastNodeStart = (char*)result.as.success.ast; // page 2 start
-    char* current = lastNodeStart;
+    Byte* lastNodeStart = (Byte*)result.as.success.ast; // page 2 start
+    Byte* current = lastNodeStart;
 
     Ast* ast = (Ast*)current;
     Assertf(ast->type == AST_CONS, "Expected Cons, but received %d", ast->type);
 
-    char* headStart = (char*)ast->as.cons.head;
-    char* firstNodeStart = headStart - sizeof(Object); // page 1 start
+    Byte* headStart = (Byte*)ast->as.cons.head;
+    Byte* firstNodeStart = headStart - sizeof(Object); // page 1 start
 
     current = firstNodeStart;
 

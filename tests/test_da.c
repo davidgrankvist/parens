@@ -1,8 +1,8 @@
 #include "tests.h"
 #include "da.h"
 
-typedef int TestInt;
-DA_DECLARE(TestInt);
+DA_DECLARE(int);
+typedef intDa IntDa;
 
 typedef enum {
     DA_TEST_OP_ADD,
@@ -25,12 +25,12 @@ typedef struct {
     size_t initCapacity;
     bool checkCapacity;
     bool hasCustomCapacity;
-    TestIntDa expected;
+    IntDa expected;
 } DaTestCase;
 
 #define DA_TEST_DEFAULT_CAPACITY 10
 
-static bool TestIntDaEquals(TestIntDa expected, TestIntDa actual, bool checkCapacity) {
+static bool IntDaEquals(IntDa expected, IntDa actual, bool checkCapacity) {
     if (expected.count != actual.count) {
         return false;
     }
@@ -48,7 +48,7 @@ static bool TestIntDaEquals(TestIntDa expected, TestIntDa actual, bool checkCapa
     return true;
 }
 
-static void PrintTestIntDa(const char* prefix, TestIntDa da) {
+static void PrintIntDa(const char* prefix, IntDa da) {
     printf("%s: count=%ld, capacity=%ld, items=", prefix, da.count, da.capacity);
     if (da.items == NULL) {
        printf("NULL ");
@@ -62,7 +62,7 @@ static void RunTestCase(DaTestCase testCase) {
     printf("%s\n", testCase.desc);
 
     size_t cap = testCase.hasCustomCapacity ? testCase.initCapacity : DA_TEST_DEFAULT_CAPACITY;
-    TestIntDa da = DA_MAKE_CAPACITY(TestInt, cap);
+    IntDa da = DA_MAKE_CAPACITY(int, cap);
 
     for (int i = 0; i < testCase.opCount; i++) {
         TestDaOperation op = testCase.operations[i];
@@ -79,14 +79,14 @@ static void RunTestCase(DaTestCase testCase) {
         }
     }
 
-    if (TestIntDaEquals(testCase.expected, da, testCase.checkCapacity)) {
+    if (IntDaEquals(testCase.expected, da, testCase.checkCapacity)) {
         return;
     }
     PRINT_TEST_FAILURE();
 
-    PrintTestIntDa("Expected", testCase.expected);
+    PrintIntDa("Expected", testCase.expected);
     printf("\n");
-    PrintTestIntDa("Actual", da);
+    PrintIntDa("Actual", da);
     printf("\n");
     AssertFail("Unexpected DA result");
 }
@@ -97,7 +97,7 @@ void DynamicArrayTests() {
     RunTestCase((DaTestCase) {
         .desc = "Empty",
         .expected = {
-            .items = (TestInt[]) {},
+            .items = (int[]) {},
             .count = 0,
             .capacity = DA_TEST_DEFAULT_CAPACITY,
         }
@@ -110,7 +110,7 @@ void DynamicArrayTests() {
         },
         .opCount = 1,
         .expected = {
-            .items = (TestInt[]) { 1234 },
+            .items = (int[]) { 1234 },
             .count = 1,
             .capacity = DA_TEST_DEFAULT_CAPACITY,
         }
@@ -125,7 +125,7 @@ void DynamicArrayTests() {
         },
         .opCount = 3,
         .expected = {
-            .items = (TestInt[]) { 1, 2, 3 },
+            .items = (int[]) { 1, 2, 3 },
             .count = 3,
             .capacity = DA_TEST_DEFAULT_CAPACITY,
         }
@@ -142,7 +142,7 @@ void DynamicArrayTests() {
         .initCapacity = 2,
         .hasCustomCapacity = true,
         .expected = {
-            .items = (TestInt[]) { 1, 2, 3 },
+            .items = (int[]) { 1, 2, 3 },
             .count = 3,
             .capacity = DA_TEST_DEFAULT_CAPACITY,
         }
@@ -158,7 +158,7 @@ void DynamicArrayTests() {
         },
         .opCount = 4,
         .expected = {
-            .items = (TestInt[]) { 3, 2 },
+            .items = (int[]) { 3, 2 },
             .count = 2,
             .capacity = DA_TEST_DEFAULT_CAPACITY,
         }

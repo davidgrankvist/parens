@@ -85,4 +85,9 @@
 
 #endif // DA_WITH_ONLY_DECLARE
 
+// -- Common DA types --
+
+typedef unsigned char Byte;
+DA_DECLARE(Byte);
+
 #endif

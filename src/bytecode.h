@@ -10,12 +10,10 @@
 // -- OP codes --
 
 typedef enum {
+    OP_POP,
     OP_NIL,
-    // add more OP codes here
+    OP_PRINT,
 } OpCode;
-
-typedef char OpByte;
-DA_DECLARE(OpByte);
 
 const char* MapOpCodeToStr(OpCode code);
 
@@ -27,7 +25,7 @@ typedef enum {
 } ByteCodeResultType;
 
 typedef struct {
-    OpByteDa bytes;
+    ByteDa byteCode;
 } ByteCodeGenerateSuccess;
 
 typedef struct {
