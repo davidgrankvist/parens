@@ -66,7 +66,7 @@ typedef struct {
 
 struct Ast {
     AstType type;
-    Token token;
+    Token* token;
     union {
         AstAtom atom;
         AstCons cons;

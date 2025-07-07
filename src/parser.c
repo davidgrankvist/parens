@@ -8,28 +8,28 @@ static TokenDa tokens = {0};
 static size_t currentIndex = 0;
 static Allocator* astAllocator = NULL;
 
-static Token Previos() {
-    return tokens.items[currentIndex - 1];
+static Token* Previos() {
+    return &tokens.items[currentIndex - 1];
 }
 
-static Token Peek() {
-    return tokens.items[currentIndex];
+static Token* Peek() {
+    return &tokens.items[currentIndex];
 }
 
 static bool IsDone() {
-    return currentIndex >= tokens.count || Peek().type == TOKEN_EOF;
+    return currentIndex >= tokens.count || Peek()->type == TOKEN_EOF;
 }
 
-static Token Advance() {
+static Token* Advance() {
     if (IsDone()) {
         return Previos();
     }
-    return tokens.items[currentIndex++];
+    return &tokens.items[currentIndex++];
 }
 
 static bool Match(TokenType type) {
-    Token token = Peek();
-    if (token.type == type) {
+    Token* token = Peek();
+    if (token->type == type) {
         Advance();
         return true;
     }
@@ -37,8 +37,8 @@ static bool Match(TokenType type) {
 }
 
 static bool Check(TokenType type) {
-    Token token = Peek();
-    return token.type == type;
+    Token* token = Peek();
+    return token->type == type;
 }
 
 static ParseResult EmitParseError(const char* message) {
@@ -97,7 +97,7 @@ Ast* CreateCons(Ast* head, Ast* tail, Allocator* allocator) {
 static ParseResult ParseExpr();
 
 static ParseResult ParseF64() {
-    String str = Peek().str;
+    String str = Peek()->str;
     double num = ParseStringAsDouble(str);
     Value val = MAKE_F64(num);
 
@@ -125,13 +125,13 @@ Object* CreateSymbolObject(String s, Allocator* allocator) {
 }
 
 static ParseResult ParseSymbol() {
-    String s = Peek().str;
+    String s = Peek()->str;
     Ast* ast = CreateAtom(MAKE_SYMBOL(s, astAllocator), astAllocator);
     return EmitParseSuccess(ast);
 }
 
 static ParseResult ParseString() {
-    String quotedStr = Peek().str;
+    String quotedStr = Peek()->str;
     String unquotedStr = {
         .start = &quotedStr.start[1],
         .length = quotedStr.length - 2,
@@ -143,7 +143,7 @@ static ParseResult ParseString() {
 static ParseResult ParseAtom() {
     ParseResult result = {0};
     Ast* ast = NULL;
-    switch (Peek().type) {
+    switch (Peek()->type) {
         case TOKEN_NIL:
             ast = CreateAtom(MAKE_NIL(), astAllocator);
             result = EmitParseSuccess(ast);

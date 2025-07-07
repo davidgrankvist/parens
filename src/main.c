@@ -4,14 +4,15 @@
 #include "parser.h"
 #include "memory.h"
 
+#define TOKENS_DEFAULT_CAPACITY 256
+
 int main() {
     char* program = "(1 2 3)";
     printf("Tokenizing %s\n", program);
 
     InitTokenizer(program);
 
-    //TODO(memory): Never freed. Use arena?
-    TokenDa tokens = DA_MAKE_CAPACITY(Token, 100);
+    TokenDa tokens = DA_MAKE_CAPACITY(Token, TOKENS_DEFAULT_CAPACITY);
 
     Token token = {0};
     do {

@@ -25,7 +25,6 @@ static int ToDigit(char c) {
 
 // use custom parsing since the stdlib relies on C strings
 double ParseStringAsDouble(String str) {
-    // TODO(incomplete): handles 123.456 but not NaN, etc.
     double num = 0;
     int i = 0;
     // integer part
