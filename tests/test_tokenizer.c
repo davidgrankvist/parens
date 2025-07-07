@@ -41,7 +41,7 @@ void TokenizerTests() {
 
     RunTestCase((TokenizerTestCase){
         .desc = "Only nil",
-        .input = "nil",
+        .input = "()",
         .expected = (TokenType[]){ TOKEN_NIL, TOKEN_EOF },
         .numExpected = 2,
     });
@@ -58,7 +58,7 @@ void TokenizerTests() {
 
     RunTestCase((TokenizerTestCase){
         .desc = "Mixed list",
-        .input = "(1 asdf nil)",
+        .input = "(1 asdf ())",
         .expected = (TokenType[]){
             TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_SYMBOL,
             TOKEN_NIL, TOKEN_PAREN_END, TOKEN_EOF
@@ -76,7 +76,7 @@ void TokenizerTests() {
 
     RunTestCase((TokenizerTestCase){
         .desc = "List with string",
-        .input = "(1 \"hello\" nil)",
+        .input = "(1 \"hello\" ())",
         .expected = (TokenType[]){
             TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_STRING,
             TOKEN_NIL, TOKEN_PAREN_END, TOKEN_EOF
@@ -95,7 +95,7 @@ void TokenizerTests() {
 
     RunTestCase((TokenizerTestCase){
         .desc = "Unterminated string",
-        .input = "(1 \"hello nil)",
+        .input = "(1 \"hello ())",
         .expected = (TokenType[]){
             TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_ERROR
         },

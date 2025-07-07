@@ -128,7 +128,7 @@ void ParserTests() {
 
     RunTestCase((ParserTestCase) {
         .desc = "Only nil",
-        .input = "nil",
+        .input = "()",
         .expected = {
             .type = PARSE_SUCCESS,
             .as.success.ast = NIL(),

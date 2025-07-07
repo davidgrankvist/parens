@@ -72,7 +72,7 @@ static void PrintAstHelper(Ast* ast, void* ctx);
 static void PrintValue(Value value) {
     switch(value.type) {
         case VALUE_NIL:
-            printf("nil");
+            printf("()");
             break;
         case VALUE_F64:
             printf("%g", value.as.f64);
