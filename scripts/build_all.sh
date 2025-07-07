@@ -1,4 +1,6 @@
 #!/usr/bin/sh
 
-call ./scripts/build.sh
-call ./scripts/build_tests.sh
+set -e
+
+./scripts/build.sh
+./scripts/build_tests.sh
