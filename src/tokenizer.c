@@ -1,4 +1,4 @@
-#include "tokenizer.h"
+#include "tokens.h"
 
 static char* current = NULL;
 static char* tokenStart = NULL;

@@ -6,6 +6,8 @@
 #include "da.h"
 #undef DA_WITH_ONLY_DECLARE
 
+// -- Tokens --
+
 typedef enum {
     TOKEN_PAREN_START,
     TOKEN_PAREN_END,
@@ -38,5 +40,10 @@ DA_DECLARE(Token);
 const char* MapTokenTypeToStr(TokenType type);
 void PrintTokenType(TokenType type);
 void PrintToken(Token token);
+
+// -- Tokenizer --
+
+void InitTokenizer(char* str);
+Token ConsumeToken();
 
 #endif

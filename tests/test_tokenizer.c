@@ -1,5 +1,5 @@
 #include "tests.h"
-#include "tokenizer.h"
+#include "tokens.h"
 
 typedef struct {
     char* desc;
