@@ -12,15 +12,28 @@ void FreeMemory(void* ptr);
 #define ALLOCATE_NEW_ARR(type, count) ALLOCATE_ARR(type, NULL, count)
 #define RESIZE_ARR(items, newCount) AllocateArray(items, newCount, sizeof(items[0]))
 
-// -- Arena allocation --
+// -- Allocators --
 
 typedef struct Allocator Allocator;
 
-void* ArenaAllocate(size_t bytes, Allocator* allocator);
-void ArenaReset(Allocator* allocator);
-void ArenaFree(Allocator* allocator);
+void* AllocatorAlloc(size_t bytes, Allocator* allocator);
 
-void ArenaDebug(Allocator* allocator);
+// Reset allocator state, for example memory arenas. The allocator can be re-used.
+void AllocatorReset(Allocator* allocator);
+// Free allocator state. The allocator can not be re-used.
+void AllocatorFree(Allocator* allocator);
+// Helper to inspect internal state when debugging.
+void AllocatorDebug(Allocator* allocator);
+
+/*
+ * HEAP ALLOCATOR
+ *
+ * General purpose allocator. Uses regular stdlib calls.
+ * The caller is responsible for freeing.
+ *
+ * Does not implement AllocatorReset.
+ */
+Allocator* CreateHeapAllocator();
 
 /*
  * BUMP ALLOCATOR

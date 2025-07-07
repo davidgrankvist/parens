@@ -6,6 +6,7 @@
 
 static TokenDa tokens = {0};
 static size_t currentIndex = 0;
+static Allocator* astAllocator = NULL;
 
 static Token Previos() {
     return tokens.items[currentIndex - 1];
@@ -67,9 +68,8 @@ static ParseResult EmitParseSuccess(Ast* ast) {
     return result;
 }
 
-Ast* CreateAtom(Value value) {
-    //TODO(memory): Never freed. Use arena?
-    Ast* ast = ALLOCATE_OBJ(Ast);
+Ast* CreateAtom(Value value, Allocator* allocator) {
+    Ast* ast = AllocatorAlloc(sizeof(Ast), allocator);
     *ast = (Ast) {
         .type = AST_ATOM,
         .token = Peek(),
@@ -81,9 +81,8 @@ Ast* CreateAtom(Value value) {
     return ast;
 }
 
-Ast* CreateCons(Ast* head, Ast* tail) {
-    //TODO(memory): Never freed. Use arena?
-    Ast* ast = ALLOCATE_OBJ(Ast);
+Ast* CreateCons(Ast* head, Ast* tail, Allocator* allocator) {
+    Ast* ast = AllocatorAlloc(sizeof(Ast), allocator);
     *ast = (Ast) {
         .type = AST_CONS,
             .token = head->token,
@@ -102,12 +101,11 @@ static ParseResult ParseF64() {
     double num = ParseStringAsDouble(str);
     Value val = MAKE_F64(num);
 
-    return EmitParseSuccess(CreateAtom(val));
+    return EmitParseSuccess(CreateAtom(val, astAllocator));
 }
 
-Object* CreateStringObject(String s) {
-    //TODO(memory): Never freed. Use arena?
-    Object* obj = ALLOCATE_OBJ(Object);
+Object* CreateStringObject(String s, Allocator* allocator) {
+    Object* obj = AllocatorAlloc(sizeof(Object), allocator);
     *obj = (Object) {
         .type = OBJECT_STRING,
         .as.string = s,
@@ -116,9 +114,8 @@ Object* CreateStringObject(String s) {
     return obj;
 }
 
-Object* CreateSymbolObject(String s) {
-    //TODO(memory): Never freed. Use arena?
-    Object* obj = ALLOCATE_OBJ(Object);
+Object* CreateSymbolObject(String s, Allocator* allocator) {
+    Object* obj = AllocatorAlloc(sizeof(Object), allocator);
     *obj = (Object) {
         .type = OBJECT_SYMBOL,
         .as.symbol = s,
@@ -129,7 +126,7 @@ Object* CreateSymbolObject(String s) {
 
 static ParseResult ParseSymbol() {
     String s = Peek().str;
-    Ast* ast = CreateAtom(MAKE_SYMBOL(s));
+    Ast* ast = CreateAtom(MAKE_SYMBOL(s, astAllocator), astAllocator);
     return EmitParseSuccess(ast);
 }
 
@@ -139,7 +136,7 @@ static ParseResult ParseString() {
         .start = &quotedStr.start[1],
         .length = quotedStr.length - 2,
     };
-    Ast* ast = CreateAtom(MAKE_STRING(unquotedStr));
+    Ast* ast = CreateAtom(MAKE_STRING(unquotedStr, astAllocator), astAllocator);
     return EmitParseSuccess(ast);
 }
 
@@ -148,7 +145,7 @@ static ParseResult ParseAtom() {
     Ast* ast = NULL;
     switch (Peek().type) {
         case TOKEN_NIL:
-            ast = CreateAtom(MAKE_NIL());
+            ast = CreateAtom(MAKE_NIL(), astAllocator);
             result = EmitParseSuccess(ast);
             break;
         case TOKEN_NUMBER:
@@ -180,7 +177,7 @@ static ParseResult ParseAtom() {
 static ParseResult ParseListElements() {
     // add implicit nil if we reached the end
     if (Check(TOKEN_PAREN_END)) {
-        return EmitParseSuccess(CreateAtom(MAKE_NIL()));
+        return EmitParseSuccess(CreateAtom(MAKE_NIL(), astAllocator));
     }
 
     ParseResult head = ParseExpr();
@@ -192,7 +189,7 @@ static ParseResult ParseListElements() {
         return tail;
     }
 
-    Ast* cons = CreateCons(head.as.success.ast, tail.as.success.ast);
+    Ast* cons = CreateCons(head.as.success.ast, tail.as.success.ast, astAllocator);
     return EmitParseSuccess(cons);
 }
 
@@ -224,7 +221,7 @@ static ParseResult ParseList() {
         return EmitParseError("Unterminated list parentheses");
     }
 
-    Ast* cons = CreateCons(head.as.success.ast, tail.as.success.ast);
+    Ast* cons = CreateCons(head.as.success.ast, tail.as.success.ast, astAllocator);
     return EmitParseSuccess(cons);
 }
 
@@ -236,9 +233,10 @@ static ParseResult ParseExpr() {
     }
 }
 
-ParseResult ParseTokens(TokenDa ts) {
+ParseResult ParseTokens(TokenDa ts, Allocator* allocator) {
     tokens = ts;
     currentIndex = 0;
+    astAllocator = allocator;
 
     if (IsDone()) {
         return EmitParseError("Nothing to parse.");

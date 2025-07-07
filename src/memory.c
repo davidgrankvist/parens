@@ -26,26 +26,52 @@ void FreeMemory(void* ptr) {
 // -- Arena allocation --
 
 typedef struct Allocator {
-    void* (*AllocateBytes)(size_t bytes, struct Allocator* self);
+    void* (*Alloc)(size_t bytes, struct Allocator* self);
     void (*Reset)(struct Allocator* self);
     void (*Free)(struct Allocator* self);
     void (*Debug)(struct Allocator* self);
 } Allocator;
 
-void* ArenaAllocate(size_t bytes, Allocator* allocator) {
-    return allocator->AllocateBytes(bytes, allocator);
+void* AllocatorAlloc(size_t bytes, Allocator* allocator) {
+    return allocator->Alloc(bytes, allocator);
 }
 
-void ArenaReset(Allocator* allocator) {
+void AllocatorReset(Allocator* allocator) {
     allocator->Reset(allocator);
 }
 
-void ArenaFree(Allocator* allocator) {
+void AllocatorFree(Allocator* allocator) {
     allocator->Free(allocator);
 }
 
-void ArenaDebug(Allocator* allocator) {
+void AllocatorDebug(Allocator* allocator) {
     allocator->Debug(allocator);
+}
+
+static void AllocatorStub(Allocator* self) {
+}
+
+// -- Heap allocator --
+
+static void* AllocHeap(size_t bytes, Allocator* self) {
+    return AllocateZeros(1, bytes);
+}
+
+static void FreeHeap(Allocator* self) {
+    *self = (Allocator){0};
+    FreeMemory(self);
+}
+
+Allocator* CreateHeapAllocator() {
+    Allocator* allocator = ALLOCATE_OBJ(Allocator);
+    *allocator = (Allocator) {
+        .Alloc = &AllocHeap,
+        .Reset = &AllocatorStub,
+        .Free = &FreeHeap,
+        .Debug = &AllocatorStub,
+    };
+
+    return allocator;
 }
 
 // -- Bump allocator --
@@ -66,7 +92,7 @@ typedef struct {
     size_t currentPage;
 } BumpAllocator;
 
-static void* AllocateBytesBump(size_t bytes, Allocator* self) {
+static void* AllocBump(size_t bytes, Allocator* self) {
     BumpAllocator* allocator = (BumpAllocator*)self;
     Assert(bytes <= allocator->pageSize, "Cannot allocate objects greater than the page size");
 
@@ -140,18 +166,13 @@ static void FreeBump(Allocator* self) {
     FreeMemory(allocator);
 }
 
-static void DebugBump(Allocator* self) {
-    BumpAllocator* allocator = (BumpAllocator*)self;
-    // inspect things here..
-}
-
 Allocator* CreateBumpAllocator(size_t pageSize, size_t initialNumPages) {
     BumpAllocator* allocator = ALLOCATE_OBJ(BumpAllocator);
     *allocator = (BumpAllocator) {
-        .base.AllocateBytes = &AllocateBytesBump,
+        .base.Alloc = &AllocBump,
         .base.Reset = &ResetBump,
         .base.Free = &FreeBump,
-        .base.Debug = &DebugBump,
+        .base.Debug = &AllocatorStub,
         .pageSize = pageSize,
         .initialNumPages = initialNumPages,
         .currentPage = 0,

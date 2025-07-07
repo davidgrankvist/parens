@@ -2,6 +2,7 @@
 #include "common.h"
 #include "tokenizer.h"
 #include "parser.h"
+#include "memory.h"
 
 int main() {
     char* program = "(1 2 3)";
@@ -25,6 +26,7 @@ int main() {
     printf("Tokenization success! Found %ld tokens\n", tokens.count);
 
     printf("Parsing tokens\n");
-    ParseResult result = ParseTokens(tokens);
+    Allocator* allocator = CreateHeapAllocator();
+    ParseResult result = ParseTokens(tokens, allocator);
     PrintParseResult(result);
 }

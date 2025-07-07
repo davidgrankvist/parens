@@ -2,6 +2,7 @@
 #define parser_h
 
 #include "ast.h"
+#include "memory.h"
 
 typedef enum {
     PARSE_SUCCESS,
@@ -25,7 +26,7 @@ typedef struct {
     } as;
 } ParseResult;
 
-ParseResult ParseTokens(TokenDa tokens);
+ParseResult ParseTokens(TokenDa ts, Allocator* allocator);
 
 void PrintParseResult(ParseResult result);
 void PrintAst(Ast* ast);

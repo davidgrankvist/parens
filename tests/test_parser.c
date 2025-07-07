@@ -78,7 +78,8 @@ static void RunTestCase(ParserTestCase testCase) {
 
     Assert(token.type != TOKEN_ERROR, "Failed to tokenize");
 
-    ParseResult result = ParseTokens(tokens);
+    Allocator* allocator = CreateHeapAllocator();
+    ParseResult result = ParseTokens(tokens, allocator);
 
     if (result.type != testCase.expected.type) {
         PRINT_TEST_FAILURE();
@@ -91,7 +92,6 @@ static void RunTestCase(ParserTestCase testCase) {
         );
     }
 
-
     if (testCase.expected.type == PARSE_SUCCESS
             && !AstEquals(testCase.expected.as.success.ast, result.as.success.ast)) {
         PRINT_TEST_FAILURE();
@@ -102,16 +102,20 @@ static void RunTestCase(ParserTestCase testCase) {
 
         AssertFail("Unexpected AST.");
     }
+
+    AllocatorFree(allocator);
 }
 
-#define CONS(h, t) CreateCons(h, t)
-#define NIL() CreateAtom(MAKE_NIL())
-#define F64(x) CreateAtom(MAKE_F64(x))
-#define SYMBOL(cs) CreateAtom(MAKE_SYMBOL_CHARS(cs))
-#define STRING(cs) CreateAtom(MAKE_STRING_CHARS(cs))
+#define CONS(h, t) CreateCons(h, t, inputAllocator)
+#define NIL() CreateAtom(MAKE_NIL(), inputAllocator)
+#define F64(x) CreateAtom(MAKE_F64(x), inputAllocator)
+#define SYMBOL(cs) CreateAtom(MAKE_SYMBOL_CHARS(cs, inputAllocator), inputAllocator)
+#define STRING(cs) CreateAtom(MAKE_STRING_CHARS(cs, inputAllocator), inputAllocator)
 
 void ParserTests() {
     PRINT_TEST_TITLE();
+
+    Allocator* inputAllocator = CreateHeapAllocator();
 
     RunTestCase((ParserTestCase) {
         .desc = "Empty",
@@ -217,6 +221,8 @@ void ParserTests() {
             ),
         },
     });
+
+    AllocatorFree(inputAllocator);
 }
 
 #undef CONS

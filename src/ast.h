@@ -2,6 +2,7 @@
 #define ast_h
 
 #include "common.h"
+#include "memory.h"
 
 // -- Values --
 
@@ -35,14 +36,14 @@ typedef struct {
 #define MAKE_NIL() (Value) { .type = VALUE_NIL }
 #define MAKE_F64(x) (Value) { .type = VALUE_F64, .as.f64 = x }
 #define MAKE_OBJECT(obj) (Value) { .type = VALUE_OBJECT, .as.object = obj }
-#define MAKE_STRING(s) MAKE_OBJECT(CreateStringObject(s))
-#define MAKE_SYMBOL(s) MAKE_OBJECT(CreateSymbolObject(s))
+#define MAKE_STRING(s, allocator) MAKE_OBJECT(CreateStringObject(s, allocator))
+#define MAKE_SYMBOL(s, allocator) MAKE_OBJECT(CreateSymbolObject(s, allocator))
 
-#define MAKE_STRING_CHARS(cs) MAKE_STRING(MakeString(cs))
-#define MAKE_SYMBOL_CHARS(cs) MAKE_SYMBOL(MakeString(cs))
+#define MAKE_STRING_CHARS(cs, allocator) MAKE_STRING(MakeString(cs), allocator)
+#define MAKE_SYMBOL_CHARS(cs, allocator) MAKE_SYMBOL(MakeString(cs), allocator)
 
-Object* CreateStringObject(String s);
-Object* CreateSymbolObject(String s);
+Object* CreateStringObject(String s, Allocator* allocator);
+Object* CreateSymbolObject(String s, Allocator* allocator);
 
 
 // -- AST --
@@ -79,7 +80,7 @@ typedef struct {
 
 void VisitAst(Ast* ast, AstVisitor* visitor, void* ctx);
 
-Ast* CreateAtom(Value value);
-Ast* CreateCons(Ast* head, Ast* tail);
+Ast* CreateAtom(Value value, Allocator* allocator);
+Ast* CreateCons(Ast* head, Ast* tail, Allocator* allocator);
 
 #endif

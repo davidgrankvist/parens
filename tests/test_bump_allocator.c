@@ -25,14 +25,14 @@ typedef struct {
         actual.i, actual.c, actual.f, actual.d)
 
 static void TestAllocateOneByte(Allocator* allocator) {
-    char* b = ArenaAllocate(1, allocator);
+    char* b = AllocatorAlloc(1, allocator);
     *b = 'a';
 }
 
 static void TestAllocateTwoBytesSequentially(Allocator* allocator) {
-    char* b1 = ArenaAllocate(1, allocator);
+    char* b1 = AllocatorAlloc(1, allocator);
     *b1 = 'a';
-    char* b2 = ArenaAllocate(1, allocator);
+    char* b2 = AllocatorAlloc(1, allocator);
     *b2 = 'b';
 
     size_t diff = (b2 - b1) * sizeof(char);
@@ -42,9 +42,9 @@ static void TestAllocateTwoBytesSequentially(Allocator* allocator) {
 
 static void TestAllocateTwoStructsSequentially(Allocator* allocator) {
     BumpMixedTestData first = (BumpMixedTestData){ .i = 1, .c = 'a', .f = 1.2, .d = 3.4 };
-    BumpMixedTestData* s1 = ArenaAllocate(sizeof(BumpMixedTestData), allocator);
+    BumpMixedTestData* s1 = AllocatorAlloc(sizeof(BumpMixedTestData), allocator);
     *s1 = first;
-    BumpMixedTestData* s2 = ArenaAllocate(sizeof(BumpMixedTestData), allocator);
+    BumpMixedTestData* s2 = AllocatorAlloc(sizeof(BumpMixedTestData), allocator);
     *s2 = (BumpMixedTestData){ .i = 2, .c = 'b', .f = 4.5, .d = 6.7 };
 
     size_t diff = (s2 - s1) * sizeof(BumpMixedTestData);
@@ -58,9 +58,9 @@ static void TestAllocateTwoStructsSequentially(Allocator* allocator) {
 
 static void TestAllocateNewPage(Allocator* allocator) {
     // page size 1
-    char* b1 = ArenaAllocate(1, allocator);
+    char* b1 = AllocatorAlloc(1, allocator);
     *b1 = 'a';
-    char* b2 = ArenaAllocate(1, allocator);
+    char* b2 = AllocatorAlloc(1, allocator);
     *b2 = 'b';
 
     Assert(*b1 == 'a', "Expected initial data to not be modified after second allocation.");
@@ -68,9 +68,9 @@ static void TestAllocateNewPage(Allocator* allocator) {
 
 static void TestAllocateNewPageStruct(Allocator* allocator) {
     BumpMixedTestData first = (BumpMixedTestData){ .i = 1, .c = 'a', .f = 1.2, .d = 3.4 };
-    BumpMixedTestData* s1 = ArenaAllocate(sizeof(BumpMixedTestData), allocator);
+    BumpMixedTestData* s1 = AllocatorAlloc(sizeof(BumpMixedTestData), allocator);
     *s1 = first;
-    BumpMixedTestData* s2 = ArenaAllocate(sizeof(BumpMixedTestData), allocator);
+    BumpMixedTestData* s2 = AllocatorAlloc(sizeof(BumpMixedTestData), allocator);
     *s2 = (BumpMixedTestData){ .i = 2, .c = 'b', .f = 4.5, .d = 6.7 };
 
     size_t diff = (s2 - s1) * sizeof(BumpMixedTestData);
@@ -85,36 +85,36 @@ static void TestAllocateNewPageStruct(Allocator* allocator) {
 static void TestShouldNotExceedPageSize(Allocator* allocator) {
     // page size 1
     SetAssertEnabledFromTest(false);
-    void* result = ArenaAllocate(2, allocator);
+    void* result = AllocatorAlloc(2, allocator);
     SetAssertEnabledFromTest(true);
     Assert(result == NULL, "Cannot allocate more than a page in a single call.");
 }
 
 static void TestResetAndReuse(Allocator* allocator) {
-    char* b1 = ArenaAllocate(1, allocator);
+    char* b1 = AllocatorAlloc(1, allocator);
     *b1 = 'a';
-    char* b2 = ArenaAllocate(1, allocator);
+    char* b2 = AllocatorAlloc(1, allocator);
     *b2 = 'b';
 
-    ArenaReset(allocator);
+    AllocatorReset(allocator);
 
-    char* b3 = ArenaAllocate(1, allocator);
-    char* b4 = ArenaAllocate(1, allocator);
+    char* b3 = AllocatorAlloc(1, allocator);
+    char* b4 = AllocatorAlloc(1, allocator);
 
     Assert(b1 == b3, "Expected first byte address to be re-used");
     Assert(b2 == b4, "Expected second byte address to be re-used");
 }
 
 static void TestResetAndReuseMultiPage(Allocator* allocator) {
-    char* b1 = ArenaAllocate(1, allocator);
+    char* b1 = AllocatorAlloc(1, allocator);
     *b1 = 'a';
-    char* b2 = ArenaAllocate(1, allocator);
+    char* b2 = AllocatorAlloc(1, allocator);
     *b2 = 'b';
 
-    ArenaReset(allocator);
+    AllocatorReset(allocator);
 
-    char* b3 = ArenaAllocate(1, allocator);
-    char* b4 = ArenaAllocate(1, allocator);
+    char* b3 = AllocatorAlloc(1, allocator);
+    char* b4 = AllocatorAlloc(1, allocator);
 
     Assert(b1 == b3, "Expected first byte address to be re-used");
     // second byte is in a brand new page
@@ -124,7 +124,7 @@ static void RunTestCase(BumpTestCase testCase) {
     printf("%s\n", testCase.desc);
     Allocator* allocator = CreateBumpAllocator(testCase.pageSize, testCase.initialNumPages);
     testCase.testFn(allocator);
-    ArenaFree(allocator);
+    AllocatorFree(allocator);
 }
 
 void BumpAllocatorTests() {
