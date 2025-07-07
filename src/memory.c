@@ -92,6 +92,7 @@ typedef struct {
     size_t currentPage;
 } BumpAllocator;
 
+#include <stdio.h>
 static void* AllocBump(size_t bytes, Allocator* self) {
     BumpAllocator* allocator = (BumpAllocator*)self;
     Assert(bytes <= allocator->pageSize, "Cannot allocate objects greater than the page size");

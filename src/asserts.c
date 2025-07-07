@@ -15,7 +15,7 @@ void SetAssertEnabledFromTest(bool enabled) {
 }
 #endif
 
-void AssertFn(bool b, const char* file, int line, const char* func, const char* cond, const char* format, ...) {
+void AssertFunction(bool b, const char* file, int line, const char* func, const char* cond, const char* format, ...) {
     if (b || !shouldAssert) {
         return;
     }

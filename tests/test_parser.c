@@ -7,6 +7,12 @@ typedef struct {
     char* desc;
     char* input;
     ParseResult expected;
+    // configure allocator
+    bool shouldUseCustomAllocator;
+    Allocator* allocator;
+    // callback to inspect raw memory before freeing
+    bool shouldInspectAllocator;
+    void (*InspectAllocator)(Allocator* allocator, ParseResult result);
 } ParserTestCase;
 
 static bool AstAtomEquals(Ast* first, Ast* second) {
@@ -80,7 +86,8 @@ static void RunTestCase(ParserTestCase testCase) {
 
     Assert(token.type != TOKEN_ERROR, "Failed to tokenize");
 
-    Allocator* allocator = CreateBumpAllocator(PARSE_TEST_AST_PAGE_SIZE, 1);
+    Allocator* allocator = testCase.shouldUseCustomAllocator ?
+        testCase.allocator : CreateBumpAllocator(PARSE_TEST_AST_PAGE_SIZE, 1);
     ParseResult result = ParseTokens(tokens, allocator);
 
     if (result.type != testCase.expected.type) {
@@ -105,7 +112,145 @@ static void RunTestCase(ParserTestCase testCase) {
         AssertFail("Unexpected AST.");
     }
 
+    if (testCase.shouldInspectAllocator) {
+        testCase.InspectAllocator(allocator, result);
+    }
+
     AllocatorFree(allocator);
+    DA_FREE(&tokens);
+}
+
+static void AssertExpectedSymbol(Object* symbol, const char* cs, size_t length) {
+    Assert(symbol->type == OBJECT_SYMBOL, "Expected a symbol object");
+    Assertf(symbol->as.symbol.length == length, "Expected string length %ld, but received %ld\n", 1, symbol->as.symbol.length);
+    if (!StringEquals(symbol->as.symbol, MakeString(cs))) {
+        printf("Unexpected string:");
+        PrintString(symbol->as.symbol);
+        printf("\n");
+        AssertFailf("Expected symbol string \"%s\"", cs);
+    }
+}
+
+static void AssertExpectedSymbolAtom(Ast* ast, Object* expected) {
+    Assertf(ast->type == AST_ATOM, "Expected atom, but received %d", ast->type);
+    AstAtom* atom = &ast->as.atom;
+    Assertf(atom->value.type == VALUE_OBJECT, "Expected object value, but received %d", atom->value.type);
+    Assertf(atom->value.as.object == expected, "Expected object reference to be %ld, but received %ld", expected, atom->value.as.object);
+}
+
+// (a . b) = 2 symbols, 2 atoms, 1 cons
+#define PARSE_TEST_SIMPLE_CONS_SIZE (sizeof(Object) * 2 + sizeof(Ast) * 3)
+
+/*
+ * This is a memory layout test for parsing with a bump allocator.
+ * It makes sure that AST nodes are allocated sequentially in memory
+ * and in the expected order.
+ *
+ * This test assumes a single allocator page, so that all nodes
+ * are in a contiguous block.
+ *
+ * Input = "(a . b)"
+ * Output = CONS(SYMBOL("a"), SYMBOL("b"))
+ *
+ * The traversal is in post-order (head, tail, parent).
+ * Symbol values are allocated before their atom wrappers are.
+ * This gives the following memory layout.
+ *
+ *                     PAGE 1
+ * | symbol a, atom a, symbol b, atom b cons(a, b) |
+ *                                      ^
+ *                                      |
+ *                                      Result AST pointer
+ *
+ * The parse result points to the beginning of the final CONS.
+ */
+static void TestSimpleConsIsSequentialSinglePage(Allocator* allocator, ParseResult result) {
+    Assert(result.type == PARSE_SUCCESS, "Expected parse success");
+
+    size_t totalSize = PARSE_TEST_SIMPLE_CONS_SIZE;
+
+    char* lastNodeStart = (char*)result.as.success.ast;
+    char* lastNodeEnd = lastNodeStart + sizeof(Ast);
+    char* firstNodeStart = lastNodeEnd - totalSize;
+
+    char* current = firstNodeStart;
+
+    AssertExpectedSymbol((Object*)current, "a", 1);
+
+    Object* prevSymbol = (Object*)current;
+    current += sizeof(Object);
+    Ast* head = (Ast*)current;
+    AssertExpectedSymbolAtom((Ast*)current, prevSymbol);
+
+    current += sizeof(Ast);
+    AssertExpectedSymbol((Object*)current, "b", 1);
+
+    prevSymbol = (Object*)current;
+    current += sizeof(Object);
+    Ast* tail = (Ast*)current;
+    AssertExpectedSymbolAtom((Ast*)current, prevSymbol);
+
+    current += sizeof(Ast);
+    Ast* ast = (Ast*)current;
+    Assertf(ast->type == AST_CONS, "Expected Cons, but received %d", ast->type);
+    Assertf(ast->as.cons.head == head, "Expected head to be %ld, but received %ld", (size_t)head, (size_t)ast->as.cons.head);
+    Assertf(ast->as.cons.tail == tail, "Expected tail to be %ld, but received %ld", (size_t)tail, (size_t)ast->as.cons.tail);
+}
+
+/*
+ * See TestSimpleConsIsSequentialSinglePage.
+ *
+ * This is a modified version where the final CONS ends up on a new page.
+ * In this scenario the start address is not immediately known, but can
+ * be found via the head of the CONS.
+ *
+ * This is the memory layout.
+ *
+ *               PAGE 1                     PAGE 2
+ * | symbol a, atom a, symbol b, atom b | cons(a, b) |
+ *             ^                          ^
+ *             |                          |
+ *             this is the cons head      Result AST pointer
+ *
+ */
+static void TestSimpleConsIsSequentialMultiPage(Allocator* allocator, ParseResult result) {
+    Assert(result.type == PARSE_SUCCESS, "Expected parse success");
+
+    char* lastNodeStart = (char*)result.as.success.ast; // page 2 start
+    char* current = lastNodeStart;
+
+    Ast* ast = (Ast*)current;
+    Assertf(ast->type == AST_CONS, "Expected Cons, but received %d", ast->type);
+
+    char* headStart = (char*)ast->as.cons.head;
+    char* firstNodeStart = headStart - sizeof(Object); // page 1 start
+
+    current = firstNodeStart;
+
+    // -- Verify page 1 --
+
+    AssertExpectedSymbol((Object*)current, "a", 1);
+
+    Object* prevSymbol = (Object*)current;
+    current += sizeof(Object);
+    Ast* head = (Ast*)current;
+    AssertExpectedSymbolAtom((Ast*)current, prevSymbol);
+
+    current += sizeof(Ast);
+    AssertExpectedSymbol((Object*)current, "b", 1);
+
+    prevSymbol = (Object*)current;
+    current += sizeof(Object);
+    Ast* tail = (Ast*)current;
+    AssertExpectedSymbolAtom((Ast*)current, prevSymbol);
+
+    // -- Verify page 2 --
+
+    current = lastNodeStart;
+    ast = (Ast*)current;
+    Assertf(ast->type == AST_CONS, "Expected Cons, but received %d", ast->type);
+    Assertf(ast->as.cons.head == head, "Expected head to be %ld, but received %ld", (size_t)head, (size_t)ast->as.cons.head);
+    Assertf(ast->as.cons.tail == tail, "Expected tail to be %ld, but received %ld", (size_t)tail, (size_t)ast->as.cons.tail);
 }
 
 #define DUMMY_TOKEN NULL
@@ -225,6 +370,32 @@ void ParserTests() {
         },
     });
 
+    RunTestCase((ParserTestCase) {
+        .desc = "Inspect arena memory - Simple cons, single page",
+        .input = "(a . b)",
+        .expected = {
+            .type = PARSE_SUCCESS,
+            .as.success.ast = CONS(SYMBOL("a"), SYMBOL("b")),
+        },
+        .shouldUseCustomAllocator = true,
+        .allocator = CreateBumpAllocator(PARSE_TEST_SIMPLE_CONS_SIZE, 1),
+        .shouldInspectAllocator = true,
+        .InspectAllocator = &TestSimpleConsIsSequentialSinglePage,
+    });
+
+    RunTestCase((ParserTestCase) {
+        .desc = "Inspect arena memory - Simple cons, two pages",
+        .input = "(a . b)",
+        .expected = {
+            .type = PARSE_SUCCESS,
+            .as.success.ast = CONS(SYMBOL("a"), SYMBOL("b")),
+        },
+        .shouldUseCustomAllocator = true,
+        // -1 to put the last allocated node on a new page
+        .allocator = CreateBumpAllocator(PARSE_TEST_SIMPLE_CONS_SIZE - 1, 2),
+        .shouldInspectAllocator = true,
+        .InspectAllocator = &TestSimpleConsIsSequentialMultiPage,
+    });
     AllocatorFree(inputAllocator);
 }
 

@@ -57,7 +57,7 @@
         (da)->items[(da)->count++] = item; \
     } while(0)
 
-// Appends an item, growing the capacity by DA_GROW_FACTOR if needed.
+// Appends an item, multiplying the capacity by DA_GROW_FACTOR if needed.
 #define DA_APPEND(da, item) \
     DA_APPEND_RESIZE(da, item, (da)->capacity * DA_GROW_FACTOR)
 
