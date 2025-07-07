@@ -1,6 +1,8 @@
 #ifndef memory_h
 #define memory_h
 
+#include <stddef.h>
+
 // -- General purpose allocation --
 
 /*

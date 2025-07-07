@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include "da.h"
 #include "tokens.h"
 #include "parser.h"
 #include "memory.h"
+#include "bytecode.h"
 
 // Some small values for now
 #define TOKENS_DEFAULT_CAPACITY 256
@@ -11,12 +11,9 @@
 
 int main() {
     char* program = "(1 2 3)";
-    printf("Tokenizing %s\n", program);
 
     InitTokenizer(program);
-
     TokenDa tokens = DA_MAKE_CAPACITY(Token, TOKENS_DEFAULT_CAPACITY);
-
     Token token = {0};
     do {
         token = ConsumeToken();
@@ -27,10 +24,19 @@ int main() {
         PrintToken(token);
         return 1;
     }
-    printf("Tokenization success! Found %ld tokens\n", tokens.count);
-
-    printf("Parsing tokens\n");
     Allocator* allocator = CreateBumpAllocator(AST_PAGE_SIZE, AST_NUM_PAGES);
-    ParseResult result = ParseTokens(tokens, allocator);
-    PrintParseResult(result);
+    ParseResult parseResult = ParseTokens(tokens, allocator);
+
+    if (parseResult.type == PARSE_ERROR) {
+        PrintParseResult(parseResult);
+        return 1;
+    }
+
+    Ast* ast = parseResult.as.success.ast;
+    ByteCodeResult bytecodeResult = GenerateByteCode(ast, allocator);
+
+    if (bytecodeResult.type == BYTECODE_GENERATE_ERROR) {
+        PrintByteCodeResult(bytecodeResult);
+        return 1;
+    }
 }
