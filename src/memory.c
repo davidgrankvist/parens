@@ -12,8 +12,8 @@ void* AllocateArray(void* ptr, size_t count,  size_t newSize) {
     return result;
 }
 
-void* AllocateZeros(size_t count, size_t elementSize) {
-    void* result = calloc(count, elementSize);
+void* AllocateZeros(size_t bytes) {
+    void* result = calloc(1, bytes);
     Assert(result != NULL, "Failed to allocate zeros.");
 
     return result;
@@ -54,7 +54,7 @@ static void AllocatorStub(Allocator* self) {
 // -- Heap allocator --
 
 static void* AllocHeap(size_t bytes, Allocator* self) {
-    return AllocateZeros(1, bytes);
+    return AllocateZeros(bytes);
 }
 
 static void FreeHeap(Allocator* self) {
@@ -63,7 +63,7 @@ static void FreeHeap(Allocator* self) {
 }
 
 Allocator* CreateHeapAllocator() {
-    Allocator* allocator = ALLOCATE_OBJ(Allocator);
+    Allocator* allocator = AllocateZeros(sizeof(Allocator));
     *allocator = (Allocator) {
         .Alloc = &AllocHeap,
         .Reset = &AllocatorStub,
@@ -76,7 +76,7 @@ Allocator* CreateHeapAllocator() {
 
 // -- Bump allocator --
 
-// Page = DA of bytes
+// ArenaPage = DA of bytes
 typedef char ArenaByte;
 DA_DECLARE(ArenaByte);
 typedef ArenaByteDa ArenaPage;
@@ -110,7 +110,7 @@ static void* AllocBump(size_t bytes, Allocator* self) {
     if (bytes > bytesAvailable) {
         ArenaPage newPage = DA_MAKE_CAPACITY(ArenaByte, allocator->pageSize);
 
-        DA_APPEND_RESIZE(arena, newPage, arena->capacity + 1);
+        DA_APPEND_GROW_ONE(arena, newPage);
         allocator->currentPage++;
 
         lastPage = &arena->items[allocator->currentPage];
@@ -123,13 +123,13 @@ static void* AllocBump(size_t bytes, Allocator* self) {
 
 static void ResetBump(Allocator* self) {
     BumpAllocator* allocator = (BumpAllocator*)self;
-
     Arena* arena = &allocator->arena;
 
     // free the extra pages
     for (int i = allocator->initialNumPages; i < arena->count; i++) {
         DA_FREE(&arena->items[i]);
     }
+    // shrink capacity
     if (arena->count > allocator->initialNumPages) {
         arena->items = AllocateArray(arena->items, allocator->initialNumPages, sizeof(ArenaPage));
     }
@@ -147,7 +147,8 @@ static void InitArenaBump(BumpAllocator* allocator) {
     Arena arena = DA_MAKE_CAPACITY(ArenaPage, allocator->initialNumPages);
     for (int i = 0; i < allocator->initialNumPages; i++) {
         ArenaPage page = DA_MAKE_CAPACITY(ArenaByte, allocator->pageSize);
-        DA_APPEND(&arena, page);
+        // avoid DA_APPEND utils to make sure there's no resizing
+        arena.items[arena.count++] = page;
     }
 
     allocator->arena = arena;
@@ -167,7 +168,7 @@ static void FreeBump(Allocator* self) {
 }
 
 Allocator* CreateBumpAllocator(size_t pageSize, size_t initialNumPages) {
-    BumpAllocator* allocator = ALLOCATE_OBJ(BumpAllocator);
+    BumpAllocator* allocator = AllocateZeros(sizeof(BumpAllocator));
     *allocator = (BumpAllocator) {
         .base.Alloc = &AllocBump,
         .base.Reset = &ResetBump,

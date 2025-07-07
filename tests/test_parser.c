@@ -107,11 +107,12 @@ static void RunTestCase(ParserTestCase testCase) {
     AllocatorFree(allocator);
 }
 
+#define DUMMY_TOKEN NULL
 #define CONS(h, t) CreateCons(h, t, inputAllocator)
-#define NIL() CreateAtom(MAKE_NIL(), inputAllocator)
-#define F64(x) CreateAtom(MAKE_F64(x), inputAllocator)
-#define SYMBOL(cs) CreateAtom(MAKE_SYMBOL_CHARS(cs, inputAllocator), inputAllocator)
-#define STRING(cs) CreateAtom(MAKE_STRING_CHARS(cs, inputAllocator), inputAllocator)
+#define NIL() CreateAtom(MAKE_VALUE_NIL(), DUMMY_TOKEN, inputAllocator)
+#define F64(x) CreateAtom(MAKE_VALUE_F64(x), DUMMY_TOKEN, inputAllocator)
+#define SYMBOL(cs) CreateSymbolAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
+#define STRING(cs) CreateStringAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
 
 void ParserTests() {
     PRINT_TEST_TITLE();

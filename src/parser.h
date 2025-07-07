@@ -2,7 +2,6 @@
 #define parser_h
 
 #include "ast.h"
-#include "memory.h"
 
 typedef enum {
     PARSE_SUCCESS,
@@ -29,7 +28,6 @@ typedef struct {
 ParseResult ParseTokens(TokenDa ts, Allocator* allocator);
 
 void PrintParseResult(ParseResult result);
-void PrintAst(Ast* ast);
 const char* MapParseResultTypeToStr(ParseResultType type);
 
 #endif

@@ -1,19 +1,18 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "parser.h"
-#include "asserts.h"
 #include "memory.h"
 
 static TokenDa tokens = {0};
 static size_t currentIndex = 0;
 static Allocator* astAllocator = NULL;
 
-static Token* Previos() {
-    return &tokens.items[currentIndex - 1];
-}
-
 static Token* Peek() {
     return &tokens.items[currentIndex];
+}
+
+static Token* Previos() {
+    return &tokens.items[currentIndex - 1];
 }
 
 static bool IsDone() {
@@ -68,84 +67,42 @@ static ParseResult EmitParseSuccess(Ast* ast) {
     return result;
 }
 
-Ast* CreateAtom(Value value, Allocator* allocator) {
-    Ast* ast = AllocatorAlloc(sizeof(Ast), allocator);
-    *ast = (Ast) {
-        .type = AST_ATOM,
-        .token = Peek(),
-        .as.atom = (AstAtom) {
-            .value = value,
-        },
-    };
-
-    return ast;
-}
-
-Ast* CreateCons(Ast* head, Ast* tail, Allocator* allocator) {
-    Ast* ast = AllocatorAlloc(sizeof(Ast), allocator);
-    *ast = (Ast) {
-        .type = AST_CONS,
-            .token = head->token,
-            .as.cons = (AstCons) {
-                .head = head,
-                .tail = tail,
-            },
-    };
-    return ast;
-}
-
 static ParseResult ParseExpr();
 
 static ParseResult ParseF64() {
     String str = Peek()->str;
     double num = ParseStringAsDouble(str);
-    Value val = MAKE_F64(num);
+    Value val = MAKE_VALUE_F64(num);
+    Token* token = Peek();
 
-    return EmitParseSuccess(CreateAtom(val, astAllocator));
-}
-
-Object* CreateStringObject(String s, Allocator* allocator) {
-    Object* obj = AllocatorAlloc(sizeof(Object), allocator);
-    *obj = (Object) {
-        .type = OBJECT_STRING,
-        .as.string = s,
-    };
-
-    return obj;
-}
-
-Object* CreateSymbolObject(String s, Allocator* allocator) {
-    Object* obj = AllocatorAlloc(sizeof(Object), allocator);
-    *obj = (Object) {
-        .type = OBJECT_SYMBOL,
-        .as.symbol = s,
-    };
-
-    return obj;
+    return EmitParseSuccess(CreateAtom(val, token, astAllocator));
 }
 
 static ParseResult ParseSymbol() {
-    String s = Peek()->str;
-    Ast* ast = CreateAtom(MAKE_SYMBOL(s, astAllocator), astAllocator);
+    Token* token = Peek();
+    String s = token->str;
+    Ast* ast = CreateSymbolAtom(s, token, astAllocator);
     return EmitParseSuccess(ast);
 }
 
 static ParseResult ParseString() {
-    String quotedStr = Peek()->str;
+    Token* token = Peek();
+    String quotedStr = token->str;
     String unquotedStr = {
         .start = &quotedStr.start[1],
         .length = quotedStr.length - 2,
     };
-    Ast* ast = CreateAtom(MAKE_STRING(unquotedStr, astAllocator), astAllocator);
+    Ast* ast = CreateStringAtom(unquotedStr, token, astAllocator);
     return EmitParseSuccess(ast);
 }
 
 static ParseResult ParseAtom() {
     ParseResult result = {0};
     Ast* ast = NULL;
-    switch (Peek()->type) {
+    Token* token = Peek();
+    switch (token->type) {
         case TOKEN_NIL:
-            ast = CreateAtom(MAKE_NIL(), astAllocator);
+            ast = CreateAtom(MAKE_VALUE_NIL(), token, astAllocator);
             result = EmitParseSuccess(ast);
             break;
         case TOKEN_NUMBER:
@@ -177,7 +134,8 @@ static ParseResult ParseAtom() {
 static ParseResult ParseListElements() {
     // add implicit nil if we reached the end
     if (Check(TOKEN_PAREN_END)) {
-        return EmitParseSuccess(CreateAtom(MAKE_NIL(), astAllocator));
+        Token* token = Peek();
+        return EmitParseSuccess(CreateAtom(MAKE_VALUE_NIL(), token, astAllocator));
     }
 
     ParseResult head = ParseExpr();
