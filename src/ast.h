@@ -1,7 +1,8 @@
 #ifndef ast_h
 #define ast_h
 
-#include "common.h"
+#include "tokens.h"
+#include "memory.h"
 
 // -- Values --
 

@@ -1,7 +1,7 @@
 #ifndef tokenizer_h
 #define tokenizer_h
 
-#include "common.h"
+#include "tokens.h"
 
 void InitTokenizer(char* str);
 Token ConsumeToken();

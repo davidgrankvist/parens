@@ -1,4 +1,5 @@
 #include "tests.h"
+#include "da.h"
 #include "tokenizer.h"
 #include "parser.h"
 

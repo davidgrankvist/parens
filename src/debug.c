@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-#include "common.h"
+#include "tokens.h"
 #include "parser.h"
 
 const char* MapTokenTypeToStr(TokenType type) {
@@ -21,14 +21,6 @@ const char* MapTokenTypeToStr(TokenType type) {
 void PrintTokenType(TokenType type) {
     const char* typeStr = MapTokenTypeToStr(type);
     printf("%s", typeStr);
-}
-
-void PrintString(String s) {
-    fwrite(s.start, 1, s.length, stdout);
-}
-
-void PrintStringErr(String s) {
-    fwrite(s.start, 1, s.length, stderr);
 }
 
 void PrintToken(Token token) {

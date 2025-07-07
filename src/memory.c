@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "memory.h"
+#include "da.h"
 #include "asserts.h"
-#include "common.h"
 
 // -- General purpose allocation --
 

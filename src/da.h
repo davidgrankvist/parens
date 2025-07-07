@@ -1,17 +1,19 @@
-#ifndef common_h
-#define common_h
-
-#include <stddef.h>
-#include <stdbool.h>
-#include "memory.h"
-
-// -- Dynamic arrays --
 /*
  * Common dynamic arrays utilites. Uses macros to operate
  * on generic types.
  *
  * The make/append calls use standard heap allocation.
+ *
+ * Define the macro DA_WITH_ONLY_DECLARE if you only need
+ * the DA_DECLARE macro for type declarations.
  */
+
+#ifndef da_h
+#define da_h
+
+#ifndef DA_WITH_ONLY_DECLARE
+#include "memory.h"
+#endif
 
 // Declares a DA type with the suffix "Da".
 #define DA_DECLARE(type) \
@@ -20,6 +22,8 @@
         size_t count; \
         size_t capacity; \
     } type##Da
+
+#ifndef DA_WITH_ONLY_DECLARE
 
 // Capacity when calling DA_MAKE_DEFAULT
 #define DA_DEFAULT_CAPACITY 8
@@ -79,60 +83,6 @@
         (da)->items = NULL; \
     } while(0);
 
-// -- Strings --
-/*
- * Custom string type with an attached length.
- *
- * This type is useful for making substrings without
- * copying the original data.
- */
-
-typedef struct {
-    const char* start;
-    size_t length;
-} String;
-
-bool StringEquals(String s1, String s2);
-String MakeString(const char* str);
-
-void PrintString(String s);
-void PrintStringErr(String s);
-
-double ParseStringAsDouble(String str);
-
-// -- Tokens --
-
-typedef enum {
-    TOKEN_PAREN_START,
-    TOKEN_PAREN_END,
-    TOKEN_CONS,
-    TOKEN_NIL,
-    TOKEN_NUMBER,
-    TOKEN_STRING,
-    TOKEN_SYMBOL,
-    /*
-     * This marker is added to signal the end of the
-     * token stream.
-     */
-    TOKEN_EOF,
-    /*
-     * Not an actual token, but makes error reporting
-     * simple when tokenizing.
-     */
-    TOKEN_ERROR,
-} TokenType;
-
-typedef struct {
-    TokenType type;
-    String str;
-    int line;
-    int col;
-} Token;
-
-DA_DECLARE(Token);
-
-const char* MapTokenTypeToStr(TokenType type);
-void PrintTokenType(TokenType type);
-void PrintToken(Token token);
+#endif // DA_WITH_ONLY_DECLARE
 
 #endif

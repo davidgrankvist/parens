@@ -1,5 +1,5 @@
 #include "tests.h"
-#include "common.h"
+#include "da.h"
 
 typedef int TestInt;
 DA_DECLARE(TestInt);

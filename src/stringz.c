@@ -1,5 +1,6 @@
 #include <string.h>
-#include "common.h"
+#include <stdio.h>
+#include "stringz.h"
 #include "asserts.h"
 
 bool StringEquals(String s1, String s2) {
@@ -54,3 +55,10 @@ double ParseStringAsDouble(String str) {
     return num;
 }
 
+void PrintString(String s) {
+    fwrite(s.start, 1, s.length, stdout);
+}
+
+void PrintStringErr(String s) {
+    fwrite(s.start, 1, s.length, stderr);
+}
