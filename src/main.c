@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "da.h"
 #include "tokens.h"
 #include "parser.h"
@@ -11,6 +12,7 @@
 
 int main() {
     char* program = "(1 2 3)";
+    printf("Input = %s\n", program);
 
     InitTokenizer(program);
     TokenDa tokens = DA_MAKE_CAPACITY(Token, TOKENS_DEFAULT_CAPACITY);
@@ -26,17 +28,13 @@ int main() {
     }
     Allocator* allocator = CreateBumpAllocator(AST_PAGE_SIZE, AST_NUM_PAGES);
     ParseResult parseResult = ParseTokens(tokens, allocator);
+    PrintParseResult(parseResult);
 
     if (parseResult.type == PARSE_ERROR) {
-        PrintParseResult(parseResult);
         return 1;
     }
 
     Ast* ast = parseResult.as.success.ast;
     ByteCodeResult bytecodeResult = GenerateByteCode(ast, allocator);
-
-    if (bytecodeResult.type == BYTECODE_GENERATE_ERROR) {
-        PrintByteCodeResult(bytecodeResult);
-        return 1;
-    }
+    PrintByteCodeResult(bytecodeResult);
 }

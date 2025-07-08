@@ -3,11 +3,6 @@
 
 #include <stdbool.h>
 
-#ifdef IS_RUNNING_TESTS
-void SetAssertAbortFromTest(bool enabled);
-void SetAssertEnabledFromTest(bool enabled);
-#endif
-
 // Helper function. Use the macros to capture file name, etc.
 void AssertFunction(bool b,
     const char* file, int line,
@@ -21,5 +16,10 @@ void AssertFunction(bool b,
 #define AssertFailf(format, ...) \
     AssertFunction(false, __FILE__, __LINE__, __func__, "false", format, __VA_ARGS__)
 #define AssertFail(msg) AssertFailf("%s",  msg)
+
+#ifdef IS_RUNNING_TESTS
+void SetAssertAbortFromTest(bool enabled);
+void SetAssertEnabledFromTest(bool enabled);
+#endif
 
 #endif

@@ -11,9 +11,15 @@
 
 /*
  * Single byte instructions to run on a stack based bytecode VM.
+ * Byte codes are either standalone or signal how many values to
+ * pop and/or push.
  *
- * The value op codes are followed by values that are pushed as runtime values
- * to the stack. The constant op code use an index to look up the value to push.
+ * Little endian is used for multi-byte values.
+ *
+ * Primitive values like nil/true/false are stored as only the op code.
+ * No pop is required. Specific types like F64 require multiple bytes
+ * to be popped. Constants require bytes to be popped and those bytes
+ * refer to an index into a constants table.
  *
  * Arithmetic operators pop their operands, evaluate and push the result.
  *
@@ -23,8 +29,9 @@
  * The cons cell op code indicates that there are head/tail values on the stack.
  * Those are popped and a new cons cell value with that head/tail is pushed.
  *
- * Conditional jump op codes are followed by a truthy/falsey value. Jumping is done by popping
- * a byte code offset and updating the program counter.
+ * Conditional jump op codes are followed by a truthy/falsey value.
+ * Jumping is done by popping a byte code offset and updating
+ * the program counter.
  *
  * The pop op code discards a value from the stack.
  *
@@ -35,8 +42,8 @@ typedef enum {
     OP_NIL,
     OP_TRUE,
     OP_FALSE,
-    OP_F64,
-    OP_CONSTANT_16, // index to constants table for other value types
+    OP_F64, // pop next 8 bytes
+    OP_CONSTANT_16, // pop next 2 bytes for the index
     // arithmetic operators
     OP_ADD,
     OP_SUBTRACT,
@@ -44,11 +51,11 @@ typedef enum {
     OP_DIVIDE,
     OP_NEGATE,
     // functions
-    OP_FUNCTION_CALL,
+    OP_FUNCTION_CALL, // pop next byte for argc, then pop that amount
     // lists
     OP_CONS_CELL,
     // control flow
-    OP_JUMP_IF_TRUE,
+    OP_JUMP_IF_TRUE, // pop next byte for the condition
     OP_JUMP_IF_FALSE,
     OP_JUMP,
     // explicit VM stack pop
@@ -56,8 +63,6 @@ typedef enum {
     // built in functions
     OP_PRINT,
 } OpCode;
-
-const char* MapOpCodeToStr(OpCode code);
 
 // -- Bytecode generator --
 
