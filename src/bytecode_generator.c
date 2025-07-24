@@ -112,6 +112,7 @@ static void EmitF64(double d) {
     EmitByte(OP_F64);
 }
 
+// TODO(incomplete): consider builtin functions and arbitrary functions
 static void EmitAtom(Ast* ast, void* ctx) {
     Value val = ast->as.atom.value;
     switch (val.type) {
@@ -127,8 +128,60 @@ static void EmitAtom(Ast* ast, void* ctx) {
     }
 }
 
+static bool IsNilAtom(Ast* ast) {
+    return ast->type == AST_ATOM && ast->as.atom.value.type == VALUE_NIL;
+}
+
+// Evaluate each list element individually, tail first. Skip the terminating nil.
+static void EmitProperListElements(Ast* ast, void* ctx) {
+    if (IsNilAtom(ast)) {
+        return;
+    } else if (ast->type == AST_ATOM) {
+        ReportError("A proper list was unexpectedly terminated by a non-nil atom.", ctx);
+        return;
+    }
+
+    ByteCodeResult* result = (ByteCodeResult*)ctx;
+    AstCons cons = ast->as.cons;
+    Ast* tail = cons.tail;
+    Ast* head = cons.head;
+
+    EmitProperListElements(tail, result);
+    if (result->type == BYTECODE_GENERATE_ERROR) {
+        return;
+    }
+
+    EmitAstHelper(head, result);
+    if (result->type == BYTECODE_GENERATE_ERROR) {
+        return;
+    }
+}
+
 static void EmitFunctionCall(Ast* ast, void* ctx) {
-    ReportError("Function calls are not implemented", ctx);
+    EmitProperListElements(ast, ctx);
+    ByteCodeResult* result = (ByteCodeResult*)ctx;
+    if (result->type == BYTECODE_GENERATE_ERROR) {
+        return;
+    }
+
+    OpCode prevOp = byteCode.items[byteCode.count - 1];
+    if (prevOp == OP_BUILTIN_FN) {
+        /*
+         * Instead of pushing the operator/builtin to the stack, call it directly.
+         * For example the atom + is emitted as OP_ADD OP_BUILTIN_FN
+         * but in a direct invocation we can use OP_ADD right away.
+         */
+        byteCode.count--;
+    } else if (prevOp == OP_CONSTANT_16) {
+        // TODO(incomplete): also check that the constant is actually a function
+        // Add the surrounding call instruction to invoke the function
+        EmitByte(OP_FUNCTION_CALL);
+    } else if (ast->as.cons.head->type == AST_CONS) {
+        // The expression may or may not evaluate to a callable. Defer the check to runtime.
+        EmitByte(OP_FUNCTION_CALL);
+    } else {
+        ReportError("A function call head must be callable.", ctx);
+    }
 }
 
 static void EmitConsCell(Ast* ast, void* ctx) {
@@ -150,17 +203,19 @@ static void EmitConsCell(Ast* ast, void* ctx) {
     EmitByte(OP_CONS_CELL);
 }
 
+// TODO(incomplete): consider nested quotes, improper list tagging, precompiling quoted lists
 static void EmitCons(Ast* ast, void* ctx) {
-    /*
-     * TODO(incomplete): add more information to the AST
-     * to determine if something is a function call or a list.
-     */
-    bool headIsFunction = false;
-    bool tailIsProperlist = false;
-    if (headIsFunction && tailIsProperlist) {
-        EmitFunctionCall(ast, ctx);
-    } else {
+    bool isProperList = true;
+    if (isProperList) {
+        if (ast->isQuoted) {
+            AssertFail("Quoted function calls are not implemented");
+        } else {
+            EmitFunctionCall(ast, ctx);
+        }
+    } else if (ast->isQuoted) {
         EmitConsCell(ast, ctx);
+    } else {
+        ReportError("Improper lists are not callable and must be quoted.", ctx);
     }
 }
 
