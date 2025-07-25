@@ -308,7 +308,6 @@ void ParserTests() {
         },
     });
 
-
     RunTestCase((ParserTestCase) {
         .desc = "Simple cons",
         .input = "(a . b)",
@@ -396,6 +395,7 @@ void ParserTests() {
         .shouldInspectAllocator = true,
         .InspectAllocator = &TestSimpleConsIsSequentialMultiPage,
     });
+
     AllocatorFree(inputAllocator);
 }
 

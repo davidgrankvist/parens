@@ -47,6 +47,13 @@ void TokenizerTests() {
     });
 
     RunTestCase((TokenizerTestCase){
+        .desc = "Only quote",
+        .input = "'",
+        .expected = (TokenType[]){ TOKEN_QUOTE, TOKEN_EOF },
+        .numExpected = 2,
+    });
+
+    RunTestCase((TokenizerTestCase){
         .desc = "List of numbers",
         .input = "(1 2 3)",
         .expected = (TokenType[]){

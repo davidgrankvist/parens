@@ -184,11 +184,19 @@ static ParseResult ParseList() {
 }
 
 static ParseResult ParseExpr() {
+    bool isQuoted = Match(TOKEN_QUOTE);
+    ParseResult result = {0};
     if (Match(TOKEN_PAREN_START)) {
-        return ParseList();
+        result = ParseList();
     } else {
-        return ParseAtom();
+        result = ParseAtom();
     }
+
+    if (result.type == PARSE_SUCCESS && result.as.success.ast != NULL) {
+        result.as.success.ast->isQuoted = isQuoted;
+    }
+
+    return result;
 }
 
 ParseResult ParseTokens(TokenDa ts, Allocator* allocator) {

@@ -185,12 +185,17 @@ static void EmitFunctionCall(Ast* ast, void* ctx) {
 }
 
 static void EmitConsCell(Ast* ast, void* ctx) {
+    if (ast->type == AST_ATOM) {
+        EmitAstHelper(ast, ctx);
+        return;
+    }
+
     ByteCodeResult* result = (ByteCodeResult*)ctx;
     AstCons cons = ast->as.cons;
     Ast* tail = cons.tail;
     Ast* head = cons.head;
 
-    EmitAstHelper(tail, result);
+    EmitConsCell(tail, result);
     if (result->type == BYTECODE_GENERATE_ERROR) {
         return;
     }
@@ -203,19 +208,11 @@ static void EmitConsCell(Ast* ast, void* ctx) {
     EmitByte(OP_CONS_CELL);
 }
 
-// TODO(incomplete): consider nested quotes, improper list tagging, precompiling quoted lists
 static void EmitCons(Ast* ast, void* ctx) {
-    bool isProperList = true;
-    if (isProperList) {
-        if (ast->isQuoted) {
-            AssertFail("Quoted function calls are not implemented");
-        } else {
-            EmitFunctionCall(ast, ctx);
-        }
-    } else if (ast->isQuoted) {
+    if (ast->isQuoted) {
         EmitConsCell(ast, ctx);
     } else {
-        ReportError("Improper lists are not callable and must be quoted.", ctx);
+        EmitFunctionCall(ast, ctx);
     }
 }
 

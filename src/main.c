@@ -12,7 +12,7 @@
 
 // TODO(incomplete): Consider repl vs not repl. Currently not repl.
 int main() {
-    char* program = "(1 2 3)";
+    char* program = "'(1 2 3)";
 
     InitTokenizer(program);
     TokenDa tokens = DA_MAKE_CAPACITY(Token, TOKENS_DEFAULT_CAPACITY);

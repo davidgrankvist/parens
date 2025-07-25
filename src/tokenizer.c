@@ -167,6 +167,8 @@ Token ConsumeToken() {
             return EmitToken(TOKEN_CONS);
         case '"':
             return ConsumeString();
+        case '\'':
+            return EmitToken(TOKEN_QUOTE);
         default: break;
     }
 
