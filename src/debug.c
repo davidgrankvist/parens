@@ -90,6 +90,9 @@ static AstVisitor printVisitor = {
 };
 
 static void PrintAstHelper(Ast* ast, void* ctx) {
+    if (ast->isQuoted) {
+        printf("'");
+    }
     VisitAst(ast, &printVisitor, ctx);
 }
 

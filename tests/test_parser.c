@@ -56,6 +56,10 @@ static bool AstEquals(Ast* first, Ast* second) {
         return false;
     }
 
+    if (first->isQuoted != second->isQuoted) {
+        return false;
+    }
+
     switch(first->type) {
         case AST_ATOM:
             return AstAtomEquals(first, second);
@@ -253,12 +257,18 @@ static void TestSimpleConsIsSequentialMultiPage(Allocator* allocator, ParseResul
     Assertf(ast->as.cons.tail == tail, "Expected tail to be %ld, but received %ld", (size_t)tail, (size_t)ast->as.cons.tail);
 }
 
+static Ast* QuoteAst(Ast* ast) {
+    ast->isQuoted = true;
+    return ast;
+}
+
 #define DUMMY_TOKEN NULL
 #define CONS(h, t) CreateCons(h, t, inputAllocator)
 #define NIL() CreateAtom(MAKE_VALUE_NIL(), DUMMY_TOKEN, inputAllocator)
 #define F64(x) CreateAtom(MAKE_VALUE_F64(x), DUMMY_TOKEN, inputAllocator)
 #define SYMBOL(cs) CreateSymbolAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
 #define STRING(cs) CreateStringAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
+#define QUOTE(ast) QuoteAst(ast)
 
 void ParserTests() {
     PRINT_TEST_TITLE();
@@ -370,6 +380,24 @@ void ParserTests() {
     });
 
     RunTestCase((ParserTestCase) {
+        .desc = "Quoted symbol",
+        .input = "'a",
+        .expected = {
+            .type = PARSE_SUCCESS,
+            .as.success.ast = QUOTE(SYMBOL("a")),
+        },
+    });
+
+    RunTestCase((ParserTestCase) {
+        .desc = "Quoted proper list",
+        .input = "'(1 2)",
+        .expected = {
+            .type = PARSE_SUCCESS,
+            .as.success.ast = QUOTE(CONS(F64(1), CONS(F64(2), NIL()))),
+        },
+    });
+
+    RunTestCase((ParserTestCase) {
         .desc = "Inspect arena memory - Simple cons, single page",
         .input = "(a . b)",
         .expected = {
@@ -404,3 +432,4 @@ void ParserTests() {
 #undef F64
 #undef SYMBOL
 #undef STRING
+#undef QUOTE
