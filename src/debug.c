@@ -41,6 +41,26 @@ void PrintToken(Token token) {
 
 static void PrintAstHelper(Ast* ast, void* ctx);
 
+static const char* MapOperatorTypeToStr(OperatorType operator) {
+    switch(operator) {
+        case OPERATOR_ADD: return "+";
+        case OPERATOR_SUBTRACT: return "-";
+        case OPERATOR_MULTIPLY: return "*";
+        case OPERATOR_DIVIDE: return "/";
+        case OPERATOR_PRINT: return "print";
+        default: return NULL;
+    }
+}
+
+static void PrintOperator(OperatorType operator) {
+    const char* str = MapOperatorTypeToStr(operator);
+    if (str == NULL) {
+        printf("UNKNOWN");
+    } else {
+        printf("%s", str);
+    }
+}
+
 static void PrintValue(Value value) {
     switch(value.type) {
         case VALUE_NIL:
@@ -55,11 +75,14 @@ static void PrintValue(Value value) {
                 PrintString(value.as.object->as.string);
                 printf("\"");
                 break;
-            } if (value.as.object->type == OBJECT_SYMBOL) {
+            } else if (value.as.object->type == OBJECT_SYMBOL) {
                 PrintString(value.as.object->as.symbol);
                 break;
             }
             printf("UNKNOWN");
+            break;
+        case VALUE_OPERATOR:
+            PrintOperator(value.as.operator);
             break;
         default:
             printf("UNKNOWN");

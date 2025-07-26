@@ -15,6 +15,11 @@ typedef enum {
     TOKEN_STRING,
     TOKEN_SYMBOL,
     TOKEN_QUOTE,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH,
+    TOKEN_PRINT,
     /*
      * This marker is added to signal the end of the
      * token stream.

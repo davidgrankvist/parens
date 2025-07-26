@@ -96,6 +96,13 @@ static ParseResult ParseString() {
     return EmitParseSuccess(ast);
 }
 
+static ParseResult ParseOperator(OperatorType op) {
+    Token* token = Peek();
+    Value val = MAKE_VALUE_OPERATOR(op);
+    Ast* ast = CreateAtom(val, token, astAllocator);
+    return EmitParseSuccess(ast);
+}
+
 static ParseResult ParseAtom() {
     ParseResult result = {0};
     Ast* ast = NULL;
@@ -113,6 +120,22 @@ static ParseResult ParseAtom() {
             break;
         case TOKEN_SYMBOL:
             result = ParseSymbol();
+            break;
+        case TOKEN_PLUS:
+            result = ParseOperator(OPERATOR_ADD);
+            break;
+        case TOKEN_MINUS:
+            //TODO(incomplete): consider unary minus
+            result = ParseOperator(OPERATOR_SUBTRACT);
+            break;
+        case TOKEN_STAR:
+            result = ParseOperator(OPERATOR_MULTIPLY);
+            break;
+        case TOKEN_SLASH:
+            result = ParseOperator(OPERATOR_DIVIDE);
+            break;
+        case TOKEN_PRINT:
+            result = ParseOperator(OPERATOR_PRINT);
             break;
         default:
             result = EmitParseError("Unexpected token while parsing atom");

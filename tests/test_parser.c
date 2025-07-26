@@ -41,6 +41,8 @@ static bool AstAtomEquals(Ast* first, Ast* second) {
             }
             break;
         }
+        case VALUE_OPERATOR:
+            return v1.as.operator == v2.as.operator;
         default:
             break;
     }
@@ -269,6 +271,7 @@ static Ast* QuoteAst(Ast* ast) {
 #define SYMBOL(cs) CreateSymbolAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
 #define STRING(cs) CreateStringAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
 #define QUOTE(ast) QuoteAst(ast)
+#define OPERATOR(op) CreateAtom(MAKE_VALUE_OPERATOR(op), DUMMY_TOKEN, inputAllocator)
 
 void ParserTests() {
     PRINT_TEST_TITLE();
@@ -398,6 +401,15 @@ void ParserTests() {
     });
 
     RunTestCase((ParserTestCase) {
+        .desc = "Simple add",
+        .input = "(+ 1 2)",
+        .expected = {
+            .type = PARSE_SUCCESS,
+            .as.success.ast = CONS(OPERATOR(OPERATOR_ADD), CONS(F64(1), CONS(F64(2), NIL()))),
+        },
+    });
+
+    RunTestCase((ParserTestCase) {
         .desc = "Inspect arena memory - Simple cons, single page",
         .input = "(a . b)",
         .expected = {
@@ -433,3 +445,4 @@ void ParserTests() {
 #undef SYMBOL
 #undef STRING
 #undef QUOTE
+#undef OPERATOR

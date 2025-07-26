@@ -5,6 +5,7 @@ int main() {
     BumpAllocatorTests();
     TokenizerTests();
     ParserTests();
+    BytecodeGeneratorTests();
     printf("--------------\n");
     printf("SUCCESS\n");
 }

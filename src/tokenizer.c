@@ -110,8 +110,7 @@ static TokenType TryEmitKeyword(size_t startOffset, String keywordPart, TokenTyp
 
 static TokenType EmitKeywordOrSymbolType() {
     switch(tokenStart[0]) {
-        // add keywords here like this:
-        // case 'n': return TryEmitKeyword(1, (String){ "il", 2 }, TOKEN_NIL);
+        case 'p': return TryEmitKeyword(1, (String){ "rint", 4 }, TOKEN_PRINT);
         default: return TOKEN_SYMBOL;
     }
 }
@@ -169,6 +168,14 @@ Token ConsumeToken() {
             return ConsumeString();
         case '\'':
             return EmitToken(TOKEN_QUOTE);
+        case '+':
+            return EmitToken(TOKEN_PLUS);
+        case '-':
+            return EmitToken(TOKEN_MINUS);
+        case '*':
+            return EmitToken(TOKEN_STAR);
+        case '/':
+            return EmitToken(TOKEN_SLASH);
         default: break;
     }
 
