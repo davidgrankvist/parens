@@ -87,8 +87,8 @@ static ByteCodeResult MakeSuccess(Byte* bytes, size_t count) {
     return result;
 }
 
-#define F64_BIG_ENDIAN_1 63, 240, 0, 0, 0, 0, 0, 0
-#define F64_BIG_ENDIAN_2 64, 0, 0, 0, 0, 0, 0, 0
+#define F64_LITTLE_ENDIAN_1 0, 0, 0, 0, 0, 0, 240, 63
+#define F64_LITTLE_ENDIAN_2 0, 0, 0, 0, 0, 0, 0, 64
 
 void BytecodeGeneratorTests() {
     PRINT_TEST_TITLE();
@@ -102,17 +102,17 @@ void BytecodeGeneratorTests() {
     RunTestCase((BytecodeGeneratorTestCase) {
         .desc = "Only number",
         .input = "1",
-        .expected = MakeSuccess((Byte[]){ F64_BIG_ENDIAN_1, OP_F64 }, 9),
+        .expected = MakeSuccess((Byte[]){ OP_F64, F64_LITTLE_ENDIAN_1 }, 9),
     });
 
     RunTestCase((BytecodeGeneratorTestCase) {
         .desc = "Simple cons",
         .input = "'(1 . 2)",
         .expected = MakeSuccess((Byte[]){
-                F64_BIG_ENDIAN_2,
                 OP_F64,
-                F64_BIG_ENDIAN_1,
+                F64_LITTLE_ENDIAN_2,
                 OP_F64,
+                F64_LITTLE_ENDIAN_1,
                 OP_CONS_CELL
         }, 19),
     });
@@ -122,11 +122,11 @@ void BytecodeGeneratorTests() {
         .input = "'(1 2)",
         .expected = MakeSuccess((Byte[]){
                 OP_NIL,
-                F64_BIG_ENDIAN_2,
                 OP_F64,
+                F64_LITTLE_ENDIAN_2,
                 OP_CONS_CELL,
-                F64_BIG_ENDIAN_1,
                 OP_F64,
+                F64_LITTLE_ENDIAN_1,
                 OP_CONS_CELL
         }, 21),
     });
@@ -135,14 +135,29 @@ void BytecodeGeneratorTests() {
         .desc = "Simple add",
         .input = "(+ 1 2)",
         .expected = MakeSuccess((Byte[]){
-                F64_BIG_ENDIAN_2,
                 OP_F64,
-                OP_CONS_CELL,
-                F64_BIG_ENDIAN_1,
+                F64_LITTLE_ENDIAN_2,
                 OP_F64,
-                OP_CONS_CELL
+                F64_LITTLE_ENDIAN_1,
+                OP_ADD,
         }, 19),
     });
 
+    RunTestCase((BytecodeGeneratorTestCase) {
+        .desc = "Add as value",
+        .input = "'(+ 1 2)",
+        .expected = MakeSuccess((Byte[]){
+                OP_NIL,
+                OP_F64,
+                F64_LITTLE_ENDIAN_2,
+                OP_CONS_CELL,
+                OP_F64,
+                F64_LITTLE_ENDIAN_1,
+                OP_CONS_CELL,
+                OP_BUILTIN_FN,
+                OP_ADD,
+                OP_CONS_CELL,
+        }, 24),
+    });
 }
 

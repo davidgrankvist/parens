@@ -66,4 +66,6 @@ ByteCodeResult GenerateByteCode(Ast* ast, Allocator* allocator);
 const char* MapByteCodeResultTypeToStr(ByteCodeResultType type);
 void PrintByteCodeResult(ByteCodeResult result);
 
+double ReadDoubleFromLittleEndian8(Byte* bytes);
+
 #endif

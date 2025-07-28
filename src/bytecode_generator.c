@@ -4,46 +4,6 @@
 #include "asserts.h"
 
 // -- Bytecode generator --
-/*
- * Emits byte code for a stack based VM.
- *
- * -- Traversal / Byte order --
- *
- * The VM pops values from a stack and assumes the order head/tail/current.
- * That means this code generator must emit code in tail/head/current order
- * to set up the stack correctly.
- *
- * For example, (- 1 2) should be emitted as
- *
- * PUSH 2
- * PUSH 1
- * OP_SUBTRACT
- *
- * Which causes the VM to do this when it reaches the OP_SUBTRACT instruction
- *
- * first = pop()
- * second = pop()
- * push(first - second)
- *
- * -- Endianness --
- *
- * The VM pops multi-byte values and expects little endian.
- * That means the byte code generator must emit in big endian.
- * The number of bytes for a given type is also fixed for portability
- *
- * For example, a double should be emitted as this (where b8 denotes the MSB).
- *
- * PUSH b8
- * PUSH b7
- * ...
- * PUSH b1
- * OP_F64
- *
- * And the VM reads it like this
- *
- * b1 = pop()
- * ..
- */
 
 ByteDa byteCode = {0};
 
@@ -62,20 +22,20 @@ static void EmitAstHelper(Ast* ast, void* ctx) {
     VisitAst(ast, &emitterVisitor, ctx);
 }
 
-static ByteCodeResult CreateGeneratorError(const char* message) {
+static ByteCodeResult CreateGeneratorError(const char* message, Token* token) {
     ByteCodeResult result = {
         .type = BYTECODE_GENERATE_ERROR,
         .as.error = {
             .message = MakeString(message),
-            .token = NULL,
+            .token = token,
         }
     };
     return result;
 }
 
-static void ReportError(const char* message, void* ctx) {
+static void ReportError(const char* message, Ast* ast, void* ctx) {
     ByteCodeResult* result = (ByteCodeResult*)ctx;
-    *result = CreateGeneratorError(message);
+    *result = CreateGeneratorError(message, ast->token);
 }
 
 static bool IsLittleEndian() {
@@ -95,24 +55,46 @@ static void EmitBytes(Byte* bytes, size_t count) {
     }
 }
 
-static void EmitBigEndian(Byte* bytes, size_t count) {
-    if (!IsLittleEndian()) {
+static void EmitLittleEndian(Byte* bytes, size_t count) {
+    if (IsLittleEndian()) {
         EmitBytes(bytes, count);
         return;
     }
+
     for (ssize_t i = count - 1; i >= 0; i--) {
         EmitByte(bytes[i]);
     }
 }
 
 static void EmitF64(double d) {
-    // VM reads little endian, but emit order is reversed
-    EmitBigEndian((Byte*)&doubleDefault, DOUBLE_SIZE - sizeof(double)); // padding
-    EmitBigEndian((Byte*)&d, sizeof(double));
     EmitByte(OP_F64);
+    EmitLittleEndian((Byte*)&d, sizeof(double));
+    EmitLittleEndian((Byte*)&doubleDefault, DOUBLE_SIZE - sizeof(double)); // padding
 }
 
-// TODO(incomplete): consider builtin functions and arbitrary functions
+static void EmitOperator(OperatorType operator, Ast* ast, void* ctx) {
+    switch(operator) {
+        case OPERATOR_ADD:
+            EmitByte(OP_ADD);
+            break;
+        case OPERATOR_SUBTRACT:
+            EmitByte(OP_SUBTRACT);
+            break;
+        case OPERATOR_MULTIPLY:
+            EmitByte(OP_MULTIPLY);
+            break;
+        case OPERATOR_DIVIDE:
+            EmitByte(OP_DIVIDE);
+            break;
+        case OPERATOR_PRINT:
+            EmitByte(OP_PRINT);
+            break;
+        default:
+            ReportError("Unsupported operator type", ast, ctx);
+            break;
+    }
+}
+
 static void EmitAtom(Ast* ast, void* ctx) {
     Value val = ast->as.atom.value;
     switch (val.type) {
@@ -122,8 +104,12 @@ static void EmitAtom(Ast* ast, void* ctx) {
         case VALUE_F64:
             EmitF64(val.as.f64);
             break;
+        case VALUE_OPERATOR:
+            EmitByte(OP_BUILTIN_FN); // indicate that the operator is passed as a value
+            EmitOperator(val.as.operator, ast, ctx);
+            return;
         default:
-            ReportError("Unsupported value type", ctx);
+            ReportError("Unsupported value type", ast, ctx);
             break;
     }
 }
@@ -137,7 +123,7 @@ static void EmitProperListElements(Ast* ast, void* ctx) {
     if (IsNilAtom(ast)) {
         return;
     } else if (ast->type == AST_ATOM) {
-        ReportError("A proper list was unexpectedly terminated by a non-nil atom.", ctx);
+        ReportError("A proper list was unexpectedly terminated by a non-nil atom.", ast, ctx);
         return;
     }
 
@@ -164,23 +150,19 @@ static void EmitFunctionCall(Ast* ast, void* ctx) {
         return;
     }
 
-    OpCode prevOp = byteCode.items[byteCode.count - 1];
-    if (prevOp == OP_BUILTIN_FN) {
+    bool isBuiltin = byteCode.count >= 2 && byteCode.items[byteCode.count - 2] == OP_BUILTIN_FN;
+    if (isBuiltin) {
         /*
          * Instead of pushing the operator/builtin to the stack, call it directly.
-         * For example the atom + is emitted as OP_ADD OP_BUILTIN_FN
+         * For example the atom + is emitted as OP_BUILTIN_FN OP_ADD
          * but in a direct invocation we can use OP_ADD right away.
          */
+        byteCode.items[byteCode.count - 2] = byteCode.items[byteCode.count - 1];
         byteCode.count--;
-    } else if (prevOp == OP_CONSTANT_16) {
-        // TODO(incomplete): also check that the constant is actually a function
-        // Add the surrounding call instruction to invoke the function
-        EmitByte(OP_FUNCTION_CALL);
-    } else if (ast->as.cons.head->type == AST_CONS) {
-        // The expression may or may not evaluate to a callable. Defer the check to runtime.
-        EmitByte(OP_FUNCTION_CALL);
     } else {
-        ReportError("A function call head must be callable.", ctx);
+        // The expression may or may not evaluate to a callable. Defer the check to runtime.
+        // TODO(optimize): check for known callables such as resolved symbols at compile time
+        EmitByte(OP_FUNCTION_CALL);
     }
 }
 
@@ -232,6 +214,16 @@ ByteCodeResult GenerateByteCode(Ast* ast, Allocator* allocator) {
     return EmitAst(ast);
 }
 
+
+double ReadDoubleFromLittleEndian8(Byte* bytes) {
+    // TODO(portability): add proper conversion
+    Assert(DOUBLE_SIZE == sizeof(double) && IsLittleEndian(),
+           "Unable to read double with evil pointer magic");
+    double d = *((double*)bytes);
+
+    return d;
+}
+
 // -- Printing --
 
 static bool IsOpCode(OpCode op) {
@@ -244,6 +236,7 @@ static const char* MapOpCodeToStr(OpCode op) {
         case OP_FALSE: return "OP_FALSE";
         case OP_F64: return "OP_F64";
         case OP_CONSTANT_16: return "OP_CONSTANT_16";
+        case OP_BUILTIN_FN: return "OP_BUILTIN_FN";
         case OP_ADD: return "OP_ADD";
         case OP_SUBTRACT: return "OP_SUBTRACT";
         case OP_MULTIPLY: return "OP_MULTIPLY";
@@ -262,37 +255,20 @@ static const char* MapOpCodeToStr(OpCode op) {
     return NULL;
 }
 
-/*
- * Consumes the number of bytes for a given operation and returns
- * the offset to the next byte.
- *
- * The bytes are read in reverse order to match the read order
- * of the bytecode VM.
- */
 size_t DisasOp(Byte* bytes, size_t line) {
     OpCode op = bytes[0];
     size_t offset = 0;
     printf("%3ld: ", line++);
     switch (op) {
         case OP_F64: {
-            // look ahead to construct double from little endian bytes
-            Byte buf[DOUBLE_SIZE];
-            for (ssize_t i = 0; i < DOUBLE_SIZE; i++) {
-                // -1 to look beyond the op code
-                Byte b = *(bytes - i - 1);
-                buf[i] = b;
-            }
-
-            // TODO(portability): add proper conversion
-            Assert(DOUBLE_SIZE == sizeof(double) && IsLittleEndian(),
-                "Unable to read double with evil pointer magic");
-            double d = *((double*)buf);
+            // look ahead to read the resulting f64 value
+            double d = ReadDoubleFromLittleEndian8(&bytes[offset + 1]);
 
             printf("%s: %f\n", MapOpCodeToStr(op), d);
             offset++;
 
             for (int i = 0; i < DOUBLE_SIZE; i++) {
-                printf("%3ld: %d\n", line++, buf[i]);
+                printf("%3ld: %d\n", line++, bytes[offset + i]);
             }
 
             offset += DOUBLE_SIZE;
@@ -313,19 +289,14 @@ size_t DisasOp(Byte* bytes, size_t line) {
 }
 
 static void DisasByteCode(Byte* bytes, size_t count) {
-    /*
-     * Dissassemble in the VM read order in order to distinguish
-     * between op codes and data.
-     */
-    printf("Dissassembling in VM read order. Count = %ld\n", count);
-    ssize_t current = count - 1;
-    for (ssize_t guard = count - 1; current >= 0 && guard >= 0; guard--) {
-        ssize_t line = (ssize_t)count - current - 1;
-        current -= DisasOp(&bytes[current], line);
-    }
-    Assertf(current == -1,
-        "Unexpected final byte count. Expected %ld, but received %ld",
-        count, current);
+     printf("Dissassembling bytecode. Count = %ld\n", count);
+     size_t current = 0;
+     for (size_t guard = 0; current < count && guard < count; guard++) {
+         current += DisasOp(&bytes[current], current);
+     }
+     Assertf(current == count,
+             "Unexpected final byte count. Expected %ld, but received %ld",
+             count, current);
 }
 
 const char* MapByteCodeResultTypeToStr(ByteCodeResultType type) {

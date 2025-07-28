@@ -14,6 +14,11 @@ const char* MapTokenTypeToStr(TokenType type) {
         case TOKEN_SYMBOL: return "TOKEN_SYMBOL";
         case TOKEN_EOF: return "TOKEN_EOF";
         case TOKEN_ERROR: return "TOKEN_ERROR";
+        case TOKEN_PLUS: return "TOKEN_PLUS";
+        case TOKEN_MINUS: return "TOKEN_MINUS";
+        case TOKEN_STAR: return "TOKEN_STAR";
+        case TOKEN_SLASH: return "TOKEN_SLASH";
+        case TOKEN_PRINT: return "TOKEN_PRINT";
         default: return NULL;
     }
 }
