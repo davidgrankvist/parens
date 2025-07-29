@@ -66,7 +66,7 @@ static void PrintOperator(OperatorType operator) {
     }
 }
 
-static void PrintValue(Value value) {
+void PrintValue(Value value) {
     switch(value.type) {
         case VALUE_NIL:
             printf("()");

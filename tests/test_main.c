@@ -6,6 +6,7 @@ int main() {
     TokenizerTests();
     ParserTests();
     BytecodeGeneratorTests();
+    VmTests();
     printf("--------------\n");
     printf("SUCCESS\n");
 }

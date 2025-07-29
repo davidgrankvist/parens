@@ -1,9 +1,9 @@
 #ifndef vm_h
 #define vm_h
 
-#include "da.h"
 #include "memory.h"
 #include "stringz.h"
+#include "values.h"
 
 typedef enum {
     VM_SUCCESS,
@@ -11,17 +11,18 @@ typedef enum {
 } VmResultType;
 
 typedef struct {
-} VmResultSuccess;
+    ValueDa values;
+} VmSuccess;
 
 typedef struct {
     String message;
-} VmResultError;
+} VmError;
 
 typedef struct {
     VmResultType type;
     union {
-        VmResultSuccess success;
-        VmResultError error;
+        VmSuccess success;
+        VmError error;
     } as;
 } VmResult;
 
