@@ -31,6 +31,7 @@ static bool ValueEquals(Value first, Value second) {
             result = first.as.boolValue == second.as.boolValue;
             break;
         case VALUE_OBJECT:
+            // TODO(incomplete): consider cons cells
             result = first.as.object == second.as.object;
             break;
         case VALUE_OPERATOR:
@@ -137,8 +138,21 @@ static VmResult MakeSuccess(Value* values, size_t count) {
     return result;
 }
 
+static Value* MakeValuePtr(Value val, ValueDa* values) {
+    DA_APPEND(values, val);
+    return &values->items[values->count - 1];
+}
+
+#define VAL_PTR(v) MakeValuePtr(v, &values)
+#define ATOM(v) VAL_PTR((v))
+#define CONS(h, t) MAKE_VALUE_OBJECT(CreateConsCellObject(h, t, inputAllocator))
+#define CONS_PTR(h, t) VAL_PTR(CONS(h, t))
+
 void VmTests() {
     PRINT_TEST_TITLE();
+
+    ValueDa values = DA_MAKE_DEFAULT(Value);
+    Allocator* inputAllocator = CreateHeapAllocator();
 
     RunTestCase((VmTestCase) {
         .desc = "Only nil",
@@ -163,4 +177,23 @@ void VmTests() {
        .input = "(/ (* (+ 1 2) (- 3 4)) 3)",
        .expected = MakeSuccess((Value[]) { MAKE_VALUE_F64(-1) }, 1),
    });
+
+   RunTestCase((VmTestCase) {
+       .desc = "Simple list",
+       .input = "'(1 2)",
+       .expected = MakeSuccess((Value[]) {
+               CONS(
+                    ATOM(MAKE_VALUE_F64(1)),
+                    CONS_PTR(
+                         ATOM(MAKE_VALUE_F64(2)),
+                         ATOM(MAKE_VALUE_NIL())
+                    )
+               )
+           }, 1),
+   });
 }
+
+#undef VAL_PTR
+#undef ATOM
+#undef CONS
+#undef CONS_PTR

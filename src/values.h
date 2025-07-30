@@ -10,31 +10,12 @@
 #include "stringz.h"
 #include "da.h"
 
-typedef enum {
-    CONS_ATOM,
-    CONS_CELL,
-} ConsType;
-
 typedef struct Value Value;
 
 typedef struct {
-    Value* value;
-} ConsAtom;
-
-typedef struct Cons Cons;
-
-typedef struct {
-    Cons* head;
-    Cons* tail;
+    Value* head;
+    Value* tail;
 } ConsCell;
-
-struct Cons {
-    ConsType type;
-    union {
-        ConsAtom atom;
-        ConsCell cons;
-    } as;
-};
 
 typedef enum {
     OBJECT_STRING,
@@ -47,7 +28,7 @@ typedef struct {
    union {
        String string;
        String symbol;
-       Cons cons;
+       ConsCell cons;
    } as;
 } Object;
 
@@ -85,8 +66,7 @@ struct Value {
 
 Object* CreateStringObject(String s, Allocator* allocator);
 Object* CreateSymbolObject(String s, Allocator* allocator);
-Object* CreateConsAtomObject(Value* value, Allocator* allocator);
-Object* CreateConsCellObject(Cons* head, Cons* tail, Allocator* allocator);
+Object* CreateConsCellObject(Value* head, Value* tail, Allocator* allocator);
 
 DA_DECLARE(Value);
 
