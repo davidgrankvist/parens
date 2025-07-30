@@ -46,7 +46,7 @@ static void PrintVmTestResult(VmResult result) {
     if (result.type == VM_ERROR) {
         VmError error = result.as.error;
         fprintf(stderr, "VM error: ");
-        PrintString(error.message);
+        PrintStringErr(error.message);
         fprintf(stderr, "\n");
 
         return;
@@ -112,7 +112,7 @@ static void RunTestCase(VmTestCase testCase) {
         PRINT_TEST_FAILURE();
         printf("Expected:\n");
         PrintVmTestResult(testCase.expected);
-        printf("Actual:\n");
+        printf("\nActual:\n");
         PrintVmTestResult(result);
 
         AssertFail("Unexpected VM result.");
@@ -152,4 +152,15 @@ void VmTests() {
        .expected = MakeSuccess((Value[]) { MAKE_VALUE_F64(1) }, 1),
    });
 
+   RunTestCase((VmTestCase) {
+       .desc = "Simple add",
+       .input = "(+ 1 2)",
+       .expected = MakeSuccess((Value[]) { MAKE_VALUE_F64(3) }, 1),
+   });
+
+   RunTestCase((VmTestCase) {
+       .desc = "Nested arithmetic",
+       .input = "(/ (* (+ 1 2) (- 3 4)) 3)",
+       .expected = MakeSuccess((Value[]) { MAKE_VALUE_F64(-1) }, 1),
+   });
 }

@@ -4,8 +4,6 @@
 #include "da.h"
 #include "bytecode.h"
 
-// -- VM --
-
 typedef struct {
     size_t programCounter;
     ByteDa byteCode;
@@ -33,6 +31,7 @@ static Byte ConsumeByte() {
 static Byte* ConsumeBytes(size_t count) {
     Byte* start = &vmState.byteCode.items[vmState.programCounter];
     vmState.programCounter += count;
+    return start;
 }
 
 static VmResult CreateError(const char* message) {
@@ -63,7 +62,7 @@ static VmResult CreateSuccess() {
             return CreateError("Arithmetic operator failed. Expected F64 values."); \
         } \
         PushValue(MAKE_VALUE_F64(v1.as.f64 o v2.as.f64)); \
-} while(0)
+    } while(0)
 
 VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
     vmState = (VmState) {
@@ -148,8 +147,6 @@ VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
         return CreateSuccess();
     }
 }
-
-// -- Printing --
 
 const char* MapVmResultTypeToStr(VmResultType type) {
     switch(type) {

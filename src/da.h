@@ -83,7 +83,7 @@
         (da)->items = NULL; \
     } while(0);
 
-#define DA_POP(da) (da)->items[(da)->count--]
+#define DA_POP(da) (da)->items[--(da)->count]
 
 #endif // DA_WITH_ONLY_DECLARE
 
