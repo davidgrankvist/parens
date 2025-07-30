@@ -1,3 +1,8 @@
+/*
+ * These value types represent two things:
+ * 1. compile time values attached to AST atoms
+ * 2. runtime values
+ */
 #ifndef values_h
 #define values_h
 
@@ -6,8 +11,35 @@
 #include "da.h"
 
 typedef enum {
+    CONS_ATOM,
+    CONS_CELL,
+} ConsType;
+
+typedef struct Value Value;
+
+typedef struct {
+    Value* value;
+} ConsAtom;
+
+typedef struct Cons Cons;
+
+typedef struct {
+    Cons* head;
+    Cons* tail;
+} ConsCell;
+
+struct Cons {
+    ConsType type;
+    union {
+        ConsAtom atom;
+        ConsCell cons;
+    } as;
+};
+
+typedef enum {
     OBJECT_STRING,
     OBJECT_SYMBOL,
+    OBJECT_CONS,
 } ObjectType;
 
 typedef struct {
@@ -15,6 +47,7 @@ typedef struct {
    union {
        String string;
        String symbol;
+       Cons cons;
    } as;
 } Object;
 
@@ -34,7 +67,7 @@ typedef enum {
     VALUE_OPERATOR,
 } ValueType;
 
-typedef struct {
+struct Value {
     ValueType type;
     union {
         double f64;
@@ -42,7 +75,7 @@ typedef struct {
         Object* object;
         OperatorType operator;
     } as;
-} Value;
+};
 
 #define MAKE_VALUE_NIL() (Value) { .type = VALUE_NIL }
 #define MAKE_VALUE_F64(x) (Value) { .type = VALUE_F64, .as.f64 = x }
@@ -52,6 +85,8 @@ typedef struct {
 
 Object* CreateStringObject(String s, Allocator* allocator);
 Object* CreateSymbolObject(String s, Allocator* allocator);
+Object* CreateConsAtomObject(Value* value, Allocator* allocator);
+Object* CreateConsCellObject(Cons* head, Cons* tail, Allocator* allocator);
 
 DA_DECLARE(Value);
 
