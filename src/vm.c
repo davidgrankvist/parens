@@ -135,6 +135,15 @@ VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
                 PushValue(MAKE_VALUE_NIL());
                 break;
             }
+            case OP_CONS_CELL: {
+                // TODO(memory): consider freeing, refcounting, etc.
+                Value head = PopValue();
+                Value tail = PopValue();
+                Object* consObj = CreateConsCellObject(head, tail, allocator);
+                Value objVal = MAKE_VALUE_OBJECT(consObj);
+                PushValue(objVal);
+                break;
+            }
             default:
                 result = CreateError("Unsupported op code.");
                 break;

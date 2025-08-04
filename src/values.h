@@ -10,28 +10,6 @@
 #include "stringz.h"
 #include "da.h"
 
-typedef struct Value Value;
-
-typedef struct {
-    Value* head;
-    Value* tail;
-} ConsCell;
-
-typedef enum {
-    OBJECT_STRING,
-    OBJECT_SYMBOL,
-    OBJECT_CONS,
-} ObjectType;
-
-typedef struct {
-   ObjectType type;
-   union {
-       String string;
-       String symbol;
-       ConsCell cons;
-   } as;
-} Object;
-
 typedef enum {
     OPERATOR_ADD,
     OPERATOR_SUBTRACT,
@@ -48,7 +26,9 @@ typedef enum {
     VALUE_OPERATOR,
 } ValueType;
 
-struct Value {
+typedef struct Object Object;
+
+typedef struct {
     ValueType type;
     union {
         double f64;
@@ -56,7 +36,28 @@ struct Value {
         Object* object;
         OperatorType operator;
     } as;
+} Value;
+
+typedef struct {
+    Value head;
+    Value tail;
+} ConsCell;
+
+typedef enum {
+    OBJECT_STRING,
+    OBJECT_SYMBOL,
+    OBJECT_CONS,
+} ObjectType;
+
+struct Object {
+   ObjectType type;
+   union {
+       String string;
+       String symbol;
+       ConsCell cons;
+   } as;
 };
+
 
 #define MAKE_VALUE_NIL() (Value) { .type = VALUE_NIL }
 #define MAKE_VALUE_F64(x) (Value) { .type = VALUE_F64, .as.f64 = x }
@@ -66,7 +67,7 @@ struct Value {
 
 Object* CreateStringObject(String s, Allocator* allocator);
 Object* CreateSymbolObject(String s, Allocator* allocator);
-Object* CreateConsCellObject(Value* head, Value* tail, Allocator* allocator);
+Object* CreateConsCellObject(Value head, Value tail, Allocator* allocator);
 
 DA_DECLARE(Value);
 

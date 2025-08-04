@@ -1,5 +1,7 @@
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include "parser.h"
 #include "memory.h"
 
@@ -232,4 +234,67 @@ ParseResult ParseTokens(TokenDa ts, Allocator* allocator) {
     }
 
     return ParseExpr();
+}
+
+static void PrintAstHelper(Ast* ast, void* ctx);
+
+static void PrintAstAtom(Ast* ast, void* ctx) {
+    int indent = (int)(intptr_t)ctx;
+    AstAtom atom = ast->as.atom;
+    printf("%*s", indent, "");
+    PrintValue(atom.value);
+    printf("\n");
+}
+
+static void PrintAstCons(Ast* ast, void* ctx) {
+    int indent = (int)(intptr_t)ctx;
+    AstCons cons = ast->as.cons;
+    printf("%*s(\n", indent, "");
+    PrintAstHelper(cons.head, (void*)(intptr_t)(indent+2));
+    PrintAstHelper(cons.tail, (void*)(intptr_t)(indent+2));
+    printf("%*s)\n", indent, "");
+}
+
+static AstVisitor printVisitor = {
+    .VisitAtom = &PrintAstAtom,
+    .VisitCons = &PrintAstCons,
+};
+
+static void PrintAstHelper(Ast* ast, void* ctx) {
+    if (ast->isQuoted) {
+        printf("'");
+    }
+    VisitAst(ast, &printVisitor, ctx);
+}
+
+void PrintAst(Ast* ast) {
+    if (ast == NULL) {
+        printf("NULL\n");
+        return;
+    }
+    PrintAstHelper(ast, (void*)0);
+}
+
+void PrintParseResult(ParseResult result) {
+    if (result.type == PARSE_ERROR) {
+        ParseError error = result.as.error;
+        fprintf(stderr, "Parse error: ");
+        PrintStringErr(error.message);
+        fprintf(stderr, "\n");
+
+        if (error.token != NULL) {
+            PrintToken(*(error.token));
+        }
+        return;
+    }
+    printf("Parsed AST successfully\n");
+    PrintAst(result.as.success.ast);
+}
+
+const char* MapParseResultTypeToStr(ParseResultType type) {
+    switch(type) {
+        case PARSE_SUCCESS: return "PARSE_SUCCESS";
+        case PARSE_ERROR: return "PARSE_ERROR";
+        default: return NULL;
+    }
 }

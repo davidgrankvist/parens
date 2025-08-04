@@ -19,6 +19,12 @@ void AssertFunction(bool b, const char* file, int line, const char* func, const 
     if (b || !shouldAssert) {
         return;
     }
+
+    if (shouldAbort) {
+        fflush(stdout);
+        fflush(stderr);
+    }
+
     va_list args;
     va_start(args, format);
 

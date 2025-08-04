@@ -14,6 +14,33 @@ typedef struct {
 #define VM_TEST_TOKEN_MAX 100
 #define VM_TEST_PAGE_SIZE 256
 
+static bool ValueEquals(Value first, Value second);
+
+static bool ObjectEquals(Object* first, Object* second) {
+    if (first == second) {
+        return true;
+    }
+
+    if (first->type != second->type) {
+        return false;
+    }
+
+    bool result = false;
+    switch(first->type) {
+        case OBJECT_CONS: {
+            bool headEquals = ValueEquals(first->as.cons.head, second->as.cons.head);
+            bool tailEquals = ValueEquals(first->as.cons.tail, second->as.cons.tail);
+            result = headEquals && tailEquals;
+            break;
+        }
+        default:
+            AssertFail("Not implemented. Sorry.");
+            break;
+    }
+
+    return result;
+}
+
 static bool ValueEquals(Value first, Value second) {
     if (first.type != second.type) {
         return false;
@@ -31,8 +58,7 @@ static bool ValueEquals(Value first, Value second) {
             result = first.as.boolValue == second.as.boolValue;
             break;
         case VALUE_OBJECT:
-            // TODO(incomplete): consider cons cells
-            result = first.as.object == second.as.object;
+            result = ObjectEquals(first.as.object, second.as.object);
             break;
         case VALUE_OPERATOR:
             result = first.as.operator == second.as.operator;
@@ -53,10 +79,11 @@ static void PrintVmTestResult(VmResult result) {
         return;
     }
 
-    printf("VM success. Printing value stack.\n");
     ValueDa values = result.as.success.values;
+    printf("VM success. Printing value stack (%ld values).\n", values.count);
     for (ssize_t i = values.count - 1; i >= 0; i--) {
         PrintValue(values.items[i]);
+        printf("\n");
     }
 }
 
@@ -143,10 +170,7 @@ static Value* MakeValuePtr(Value val, ValueDa* values) {
     return &values->items[values->count - 1];
 }
 
-#define VAL_PTR(v) MakeValuePtr(v, &values)
-#define ATOM(v) VAL_PTR((v))
 #define CONS(h, t) MAKE_VALUE_OBJECT(CreateConsCellObject(h, t, inputAllocator))
-#define CONS_PTR(h, t) VAL_PTR(CONS(h, t))
 
 void VmTests() {
     PRINT_TEST_TITLE();
@@ -183,17 +207,14 @@ void VmTests() {
        .input = "'(1 2)",
        .expected = MakeSuccess((Value[]) {
                CONS(
-                    ATOM(MAKE_VALUE_F64(1)),
-                    CONS_PTR(
-                         ATOM(MAKE_VALUE_F64(2)),
-                         ATOM(MAKE_VALUE_NIL())
+                    MAKE_VALUE_F64(1),
+                    CONS(
+                         MAKE_VALUE_F64(2),
+                         MAKE_VALUE_NIL()
                     )
                )
            }, 1),
    });
 }
 
-#undef VAL_PTR
-#undef ATOM
 #undef CONS
-#undef CONS_PTR
