@@ -12,12 +12,32 @@ typedef struct {
 
 VmState vmState = {0};
 
+typedef Object* ObjectPtr;
+DA_DECLARE(ObjectPtr);
+ObjectPtrDa freeList = {0};
+
 static void PushValue(Value val) {
+    if (val.type == VALUE_OBJECT) {
+        val.as.object->refCount++;
+    }
+
     DA_APPEND(&vmState.values, val);
 }
 
 static Value PopValue() {
-    return DA_POP(&vmState.values);
+    Value val = DA_POP(&vmState.values);
+
+    if (val.type == VALUE_OBJECT) {
+        val.as.object->refCount--;
+
+        // soft delete - handled by GC later if the refcount stays zero
+        // TODO(incomplete): free after RETURN maybe?
+        if (val.as.object->refCount == 0) {
+            DA_APPEND(&freeList, val.as.object);
+        }
+    }
+
+    return val;
 }
 
 static bool IsDone() {
@@ -70,6 +90,8 @@ VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
         .byteCode = byteCode,
         .values = DA_MAKE_DEFAULT(Value),
     };
+
+    freeList = DA_MAKE_DEFAULT(ObjectPtr);
 
     size_t i = 0;
     size_t guard = 1337;
@@ -136,7 +158,6 @@ VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
                 break;
             }
             case OP_CONS_CELL: {
-                // TODO(memory): consider freeing, refcounting, etc.
                 Value head = PopValue();
                 Value tail = PopValue();
                 Object* consObj = CreateConsCellObject(head, tail, allocator);

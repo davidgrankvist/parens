@@ -50,12 +50,13 @@ typedef enum {
 } ObjectType;
 
 struct Object {
-   ObjectType type;
-   union {
-       String string;
-       String symbol;
-       ConsCell cons;
-   } as;
+    ObjectType type;
+    int refCount;
+    union {
+        String string;
+        String symbol;
+        ConsCell cons;
+    } as;
 };
 
 
