@@ -2,13 +2,8 @@
 #define vm_h
 
 #include "memory.h"
-#include "stringz.h"
+#include "common.h"
 #include "values.h"
-
-typedef enum {
-    VM_SUCCESS,
-    VM_ERROR,
-} VmResultType;
 
 typedef struct {
     ValueDa values;
@@ -19,7 +14,7 @@ typedef struct {
 } VmError;
 
 typedef struct {
-    VmResultType type;
+    ResultType type;
     union {
         VmSuccess success;
         VmError error;
@@ -28,7 +23,6 @@ typedef struct {
 
 VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator);
 
-const char* MapVmResultTypeToStr(VmResultType type);
 void PrintVmResult(VmResult vmResult);
 
 #endif

@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdio.h>
-#include "stringz.h"
+#include "common.h"
 #include "asserts.h"
 
 bool StringEquals(String s1, String s2) {
@@ -61,4 +61,12 @@ void PrintString(String s) {
 
 void PrintStringErr(String s) {
     fwrite(s.start, 1, s.length, stderr);
+}
+
+const char* MapResultTypeToStr(ResultType type) {
+    switch(type) {
+        case RESULT_SUCCESS: return "RESULT_SUCCESS";
+        case RESULT_ERROR: return "RESULT_ERROR";
+        default: return NULL;
+    }
 }

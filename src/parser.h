@@ -3,11 +3,6 @@
 
 #include "ast.h"
 
-typedef enum {
-    PARSE_SUCCESS,
-    PARSE_ERROR,
-} ParseResultType;
-
 typedef struct {
     Ast* ast;
 } ParseSuccess;
@@ -18,7 +13,7 @@ typedef struct {
 } ParseError;
 
 typedef struct {
-    ParseResultType type;
+    ResultType type;
     union {
         ParseSuccess success;
         ParseError error;
@@ -28,6 +23,5 @@ typedef struct {
 ParseResult ParseTokens(TokenDa ts, Allocator* allocator);
 
 void PrintParseResult(ParseResult result);
-const char* MapParseResultTypeToStr(ParseResultType type);
 
 #endif

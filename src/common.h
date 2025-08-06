@@ -1,12 +1,5 @@
-/*
- * Custom string type with an attached length.
- *
- * This type is useful for making substrings without
- * copying the original data.
- */
-
-#ifndef stringz_h
-#define stringz_h
+#ifndef common_h
+#define common_h
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -22,5 +15,12 @@ double ParseStringAsDouble(String str);
 
 void PrintString(String s);
 void PrintStringErr(String s);
+
+typedef enum {
+    RESULT_SUCCESS,
+    RESULT_ERROR,
+} ResultType;
+
+const char* MapResultTypeToStr(ResultType result);
 
 #endif

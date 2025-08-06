@@ -49,7 +49,7 @@ static ParseResult EmitParseError(const char* message) {
     };
 
     ParseResult result = {
-        .type = PARSE_ERROR,
+        .type = RESULT_ERROR,
         .as.error = error,
     };
 
@@ -62,7 +62,7 @@ static ParseResult EmitParseSuccess(Ast* ast) {
     };
 
     ParseResult result = {
-        .type = PARSE_SUCCESS,
+        .type = RESULT_SUCCESS,
         .as.success = success,
     };
 
@@ -164,11 +164,11 @@ static ParseResult ParseListElements() {
     }
 
     ParseResult head = ParseExpr();
-    if (head.type == PARSE_ERROR) {
+    if (head.type == RESULT_ERROR) {
         return head;
     }
     ParseResult tail = ParseListElements();
-    if (tail.type == PARSE_ERROR) {
+    if (tail.type == RESULT_ERROR) {
         return tail;
     }
 
@@ -185,7 +185,7 @@ static ParseResult ParseListElements() {
  */
 static ParseResult ParseList() {
     ParseResult head = ParseExpr();
-    if (head.type == PARSE_ERROR) {
+    if (head.type == RESULT_ERROR) {
         return head;
     }
 
@@ -196,7 +196,7 @@ static ParseResult ParseList() {
         tail = ParseListElements();
     }
 
-    if (tail.type == PARSE_ERROR) {
+    if (tail.type == RESULT_ERROR) {
         return tail;
     }
 
@@ -217,7 +217,7 @@ static ParseResult ParseExpr() {
         result = ParseAtom();
     }
 
-    if (result.type == PARSE_SUCCESS && result.as.success.ast != NULL) {
+    if (result.type == RESULT_SUCCESS && result.as.success.ast != NULL) {
         result.as.success.ast->isQuoted = isQuoted;
     }
 
@@ -276,7 +276,7 @@ void PrintAst(Ast* ast) {
 }
 
 void PrintParseResult(ParseResult result) {
-    if (result.type == PARSE_ERROR) {
+    if (result.type == RESULT_ERROR) {
         ParseError error = result.as.error;
         fprintf(stderr, "Parse error: ");
         PrintStringErr(error.message);
@@ -289,12 +289,4 @@ void PrintParseResult(ParseResult result) {
     }
     printf("Parsed AST successfully\n");
     PrintAst(result.as.success.ast);
-}
-
-const char* MapParseResultTypeToStr(ParseResultType type) {
-    switch(type) {
-        case PARSE_SUCCESS: return "PARSE_SUCCESS";
-        case PARSE_ERROR: return "PARSE_ERROR";
-        default: return NULL;
-    }
 }

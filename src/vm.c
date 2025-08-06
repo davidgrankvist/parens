@@ -69,7 +69,7 @@ static Byte* ConsumeBytes(size_t count) {
 
 static VmResult CreateError(const char* message) {
     VmResult result = {
-        .type = VM_ERROR,
+        .type = RESULT_ERROR,
         .as.error = {
             .message = MakeString(message),
         }
@@ -79,7 +79,7 @@ static VmResult CreateError(const char* message) {
 
 static VmResult CreateSuccess() {
     VmResult result = {
-        .type = VM_SUCCESS,
+        .type = RESULT_SUCCESS,
         .as.success = {
             .values = vmState.values,
         },
@@ -184,23 +184,15 @@ VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
         }
     }
 
-    if (result.type == VM_ERROR) {
+    if (result.type == RESULT_ERROR) {
         return result;
     } else {
         return CreateSuccess();
     }
 }
 
-const char* MapVmResultTypeToStr(VmResultType type) {
-    switch(type) {
-        case VM_SUCCESS: return "VM_SUCCESS";
-        case VM_ERROR: return "VM_ERROR";
-        default: return NULL;
-    }
-}
-
 void PrintVmResult(VmResult vmResult) {
-    if (vmResult.type == VM_ERROR) {
+    if (vmResult.type == RESULT_ERROR) {
         VmError error = vmResult.as.error;
         fprintf(stderr, "Bytecode execution error: ");
         PrintStringErr(error.message);

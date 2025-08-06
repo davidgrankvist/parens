@@ -29,21 +29,21 @@ int main() {
 
     Allocator* allocator = CreateBumpAllocator(AST_PAGE_SIZE, AST_NUM_PAGES);
     ParseResult parseResult = ParseTokens(tokens, allocator);
-    if (parseResult.type == PARSE_ERROR) {
+    if (parseResult.type == RESULT_ERROR) {
         PrintParseResult(parseResult);
         return 1;
     }
 
     Ast* ast = parseResult.as.success.ast;
     ByteCodeResult byteCodeResult = GenerateByteCode(ast, allocator);
-    if (byteCodeResult.type == BYTECODE_GENERATE_ERROR) {
+    if (byteCodeResult.type == RESULT_ERROR) {
         PrintByteCodeResult(byteCodeResult);
         return 1;
     }
 
     ByteDa byteCode = byteCodeResult.as.success.byteCode;
     VmResult vmResult = ExecuteByteCode(byteCode, allocator);
-    if (vmResult.type == VM_ERROR) {
+    if (vmResult.type == RESULT_ERROR) {
         PrintVmResult(vmResult);
         return 1;
     }

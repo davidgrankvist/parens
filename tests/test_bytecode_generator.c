@@ -17,7 +17,7 @@ static bool BytecodeResultEquals(ByteCodeResult expected, ByteCodeResult actual)
         return false;
     }
 
-    if (expected.type == BYTECODE_GENERATE_ERROR) {
+    if (expected.type == RESULT_ERROR) {
         return true;
     }
 
@@ -55,7 +55,7 @@ static void RunTestCase(BytecodeGeneratorTestCase testCase) {
     Allocator* allocator = CreateBumpAllocator(BYTECODE_GENERATOR_TEST_PAGE_SIZE, 1);
     ParseResult parseResult = ParseTokens(tokens, allocator);
 
-    Assert(parseResult.type == PARSE_SUCCESS, "Failed to parse");
+    Assert(parseResult.type == RESULT_SUCCESS, "Failed to parse");
 
     ByteCodeResult result = GenerateByteCode(parseResult.as.success.ast, allocator);
 
@@ -80,7 +80,7 @@ static ByteCodeResult MakeSuccess(Byte* bytes, size_t count) {
         .items = bytes,
     };
     ByteCodeResult result = (ByteCodeResult) {
-        .type = BYTECODE_GENERATE_SUCCESS,
+        .type = RESULT_SUCCESS,
         .as.success = byteDa,
     };
 

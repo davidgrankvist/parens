@@ -1,7 +1,7 @@
 #ifndef tokens_h
 #define tokens_h
 
-#include "stringz.h"
+#include "common.h"
 #define DA_WITH_ONLY_DECLARE
 #include "da.h"
 #undef DA_WITH_ONLY_DECLARE

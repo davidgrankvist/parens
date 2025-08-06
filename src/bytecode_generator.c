@@ -24,7 +24,7 @@ static void EmitAstHelper(Ast* ast, void* ctx) {
 
 static ByteCodeResult CreateGeneratorError(const char* message, Token* token) {
     ByteCodeResult result = {
-        .type = BYTECODE_GENERATE_ERROR,
+        .type = RESULT_ERROR,
         .as.error = {
             .message = MakeString(message),
             .token = token,
@@ -133,12 +133,12 @@ static void EmitProperListElements(Ast* ast, void* ctx) {
     Ast* head = cons.head;
 
     EmitProperListElements(tail, result);
-    if (result->type == BYTECODE_GENERATE_ERROR) {
+    if (result->type == RESULT_ERROR) {
         return;
     }
 
     EmitAstHelper(head, result);
-    if (result->type == BYTECODE_GENERATE_ERROR) {
+    if (result->type == RESULT_ERROR) {
         return;
     }
 }
@@ -146,7 +146,7 @@ static void EmitProperListElements(Ast* ast, void* ctx) {
 static void EmitFunctionCall(Ast* ast, void* ctx) {
     EmitProperListElements(ast, ctx);
     ByteCodeResult* result = (ByteCodeResult*)ctx;
-    if (result->type == BYTECODE_GENERATE_ERROR) {
+    if (result->type == RESULT_ERROR) {
         return;
     }
 
@@ -178,12 +178,12 @@ static void EmitConsCell(Ast* ast, void* ctx) {
     Ast* head = cons.head;
 
     EmitConsCell(tail, result);
-    if (result->type == BYTECODE_GENERATE_ERROR) {
+    if (result->type == RESULT_ERROR) {
         return;
     }
 
     EmitAstHelper(head, result);
-    if (result->type == BYTECODE_GENERATE_ERROR) {
+    if (result->type == RESULT_ERROR) {
         return;
     }
 
@@ -202,7 +202,7 @@ static ByteCodeResult EmitAst(Ast* ast) {
     ByteCodeResult result = {0};
     EmitAstHelper(ast, &result);
 
-    if (result.type == BYTECODE_GENERATE_SUCCESS) {
+    if (result.type == RESULT_SUCCESS) {
         result.as.success.byteCode = byteCode;
     }
     return result;
@@ -227,7 +227,7 @@ double ReadDoubleFromLittleEndian8(Byte* bytes) {
 // -- Printing --
 
 static bool IsOpCode(OpCode op) {
-    return op >= OP_NIL && op <= OP_PRINT;
+    return op >= OP_NIL && op < OP_ENUM_COUNT;
 }
 static const char* MapOpCodeToStr(OpCode op) {
     switch (op) {
@@ -299,16 +299,8 @@ static void DisasByteCode(Byte* bytes, size_t count) {
              count, current);
 }
 
-const char* MapByteCodeResultTypeToStr(ByteCodeResultType type) {
-    switch(type) {
-        case BYTECODE_GENERATE_SUCCESS: return "BYTECODE_GENERATE_SUCCESS";
-        case BYTECODE_GENERATE_ERROR: return "BYTECODE_GENERATE_ERROR";
-        default: return NULL;
-    }
-}
-
 void PrintByteCodeResult(ByteCodeResult result) {
-    if (result.type == BYTECODE_GENERATE_ERROR) {
+    if (result.type == RESULT_ERROR) {
         ByteCodeGenerateError error = result.as.error;
         fprintf(stderr, "Byte code generator error: ");
         PrintStringErr(error.message);

@@ -7,7 +7,7 @@
 #define values_h
 
 #include "memory.h"
-#include "stringz.h"
+#include "common.h"
 #include "da.h"
 
 typedef enum {

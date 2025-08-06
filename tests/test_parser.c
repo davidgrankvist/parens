@@ -98,16 +98,16 @@ static void RunTestCase(ParserTestCase testCase) {
 
     if (result.type != testCase.expected.type) {
         PRINT_TEST_FAILURE();
-        if (result.type == PARSE_ERROR) {
+        if (result.type == RESULT_ERROR) {
             PrintParseResult(result);
         }
         Assertf(false, "Unexpected parse result type. Expected %s, but received %s.",
-            MapParseResultTypeToStr(testCase.expected.type),
-            MapParseResultTypeToStr(result.type)
+            MapResultTypeToStr(testCase.expected.type),
+            MapResultTypeToStr(result.type)
         );
     }
 
-    if (testCase.expected.type == PARSE_SUCCESS
+    if (testCase.expected.type == RESULT_SUCCESS
             && !AstEquals(testCase.expected.as.success.ast, result.as.success.ast)) {
         PRINT_TEST_FAILURE();
         printf("Expected:\n");
@@ -171,7 +171,7 @@ static void AssertExpectedSymbolAtom(Ast* ast, Object* expected) {
  * The parse result points to the beginning of the final CONS.
  */
 static void TestSimpleConsIsSequentialSinglePage(Allocator* allocator, ParseResult result) {
-    Assert(result.type == PARSE_SUCCESS, "Expected parse success");
+    Assert(result.type == RESULT_SUCCESS, "Expected parse success");
 
     size_t totalSize = PARSE_TEST_SIMPLE_CONS_SIZE;
 
@@ -220,7 +220,7 @@ static void TestSimpleConsIsSequentialSinglePage(Allocator* allocator, ParseResu
  *
  */
 static void TestSimpleConsIsSequentialMultiPage(Allocator* allocator, ParseResult result) {
-    Assert(result.type == PARSE_SUCCESS, "Expected parse success");
+    Assert(result.type == RESULT_SUCCESS, "Expected parse success");
 
     Byte* lastNodeStart = (Byte*)result.as.success.ast; // page 2 start
     Byte* current = lastNodeStart;
@@ -282,7 +282,7 @@ void ParserTests() {
         .desc = "Empty",
         .input = "",
         .expected = {
-            .type = PARSE_ERROR,
+            .type = RESULT_ERROR,
         },
     });
 
@@ -290,7 +290,7 @@ void ParserTests() {
         .desc = "Only nil",
         .input = "()",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = NIL(),
         },
     });
@@ -307,7 +307,7 @@ void ParserTests() {
         .desc = "Only symbol",
         .input = "a",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = SYMBOL("a"),
         },
     });
@@ -316,7 +316,7 @@ void ParserTests() {
         .desc = "Only string",
         .input = "\"hello\"",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = STRING("hello"),
         },
     });
@@ -325,7 +325,7 @@ void ParserTests() {
         .desc = "Simple cons",
         .input = "(a . b)",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(SYMBOL("a"), SYMBOL("b")),
         },
     });
@@ -334,7 +334,7 @@ void ParserTests() {
         .desc = "Nested cons",
         .input = "((1 . 2) . (3 . (4 . 5)))",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(
                 CONS(F64(1), F64(2)),
                 CONS(
@@ -349,7 +349,7 @@ void ParserTests() {
         .desc = "Simple proper list",
         .input = "(1 2)",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(F64(1), CONS(F64(2), NIL())),
         },
     });
@@ -358,7 +358,7 @@ void ParserTests() {
         .desc = "Nested proper list",
         .input = "((1 2) (3 (4 5)))",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(
                 /*
                  * (1 2) = (1 . (2 . nil))
@@ -386,7 +386,7 @@ void ParserTests() {
         .desc = "Quoted symbol",
         .input = "'a",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = QUOTE(SYMBOL("a")),
         },
     });
@@ -395,7 +395,7 @@ void ParserTests() {
         .desc = "Quoted proper list",
         .input = "'(1 2)",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = QUOTE(CONS(F64(1), CONS(F64(2), NIL()))),
         },
     });
@@ -404,7 +404,7 @@ void ParserTests() {
         .desc = "Simple add",
         .input = "(+ 1 2)",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(OPERATOR(OPERATOR_ADD), CONS(F64(1), CONS(F64(2), NIL()))),
         },
     });
@@ -413,7 +413,7 @@ void ParserTests() {
         .desc = "Inspect arena memory - Simple cons, single page",
         .input = "(a . b)",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(SYMBOL("a"), SYMBOL("b")),
         },
         .shouldUseCustomAllocator = true,
@@ -426,7 +426,7 @@ void ParserTests() {
         .desc = "Inspect arena memory - Simple cons, two pages",
         .input = "(a . b)",
         .expected = {
-            .type = PARSE_SUCCESS,
+            .type = RESULT_SUCCESS,
             .as.success.ast = CONS(SYMBOL("a"), SYMBOL("b")),
         },
         .shouldUseCustomAllocator = true,

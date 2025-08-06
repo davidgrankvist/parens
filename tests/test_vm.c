@@ -70,7 +70,7 @@ static bool ValueEquals(Value first, Value second) {
 }
 
 static void PrintVmTestResult(VmResult result) {
-    if (result.type == VM_ERROR) {
+    if (result.type == RESULT_ERROR) {
         VmError error = result.as.error;
         fprintf(stderr, "VM error: ");
         PrintStringErr(error.message);
@@ -92,7 +92,7 @@ static bool VmResultEquals(VmResult expected, VmResult actual) {
         return false;
     }
 
-    if (expected.type == VM_ERROR) {
+    if (expected.type == RESULT_ERROR) {
         return true;
     }
 
@@ -130,10 +130,10 @@ static void RunTestCase(VmTestCase testCase) {
     Allocator* allocator = CreateBumpAllocator(VM_TEST_PAGE_SIZE, 1);
     ParseResult parseResult = ParseTokens(tokens, allocator);
 
-    Assert(parseResult.type == PARSE_SUCCESS, "Failed to parse");
+    Assert(parseResult.type == RESULT_SUCCESS, "Failed to parse");
 
     ByteCodeResult byteCodeResult = GenerateByteCode(parseResult.as.success.ast, allocator);
-    Assert(byteCodeResult.type == BYTECODE_GENERATE_SUCCESS, "Failed to generate bytecode");
+    Assert(byteCodeResult.type == RESULT_SUCCESS, "Failed to generate bytecode");
 
     VmResult result = ExecuteByteCode(byteCodeResult.as.success.byteCode, allocator);
     if (!VmResultEquals(testCase.expected, result)) {
@@ -158,7 +158,7 @@ static VmResult MakeSuccess(Value* values, size_t count) {
     };
 
     VmResult result = (VmResult) {
-        .type = VM_SUCCESS,
+        .type = RESULT_SUCCESS,
         .as.success = valueDa,
     };
 
