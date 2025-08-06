@@ -16,6 +16,8 @@ typedef Object* ObjectPtr;
 DA_DECLARE(ObjectPtr);
 ObjectPtrDa freeList = {0};
 
+Allocator* objectAllocator = NULL;
+
 static void PushValue(Value val) {
     if (val.type == VALUE_OBJECT) {
         val.as.object->refCount++;
@@ -28,16 +30,27 @@ static Value PopValue() {
     Value val = DA_POP(&vmState.values);
 
     if (val.type == VALUE_OBJECT) {
+        Assertf(val.as.object->refCount > 0,
+                "Unexpected refcount %d. Objects on the stack should have at least one reference.",
+                val.as.object->refCount);
         val.as.object->refCount--;
 
         // soft delete - handled by GC later if the refcount stays zero
-        // TODO(incomplete): free after RETURN maybe?
         if (val.as.object->refCount == 0) {
             DA_APPEND(&freeList, val.as.object);
         }
     }
 
     return val;
+}
+
+// TODO(incomplete): Call at suitable operations. Function return maybe when values are popped?
+static void CollectGarbage() {
+    for (int i = 0; i < freeList.count; i++) {
+        Object* item = freeList.items[i];
+        DA_REMOVE_UNORDERED(&freeList, i);
+        AllocatorFreeObject(item, sizeof(Object), objectAllocator);
+    }
 }
 
 static bool IsDone() {
@@ -90,11 +103,11 @@ VmResult ExecuteByteCode(ByteDa byteCode, Allocator* allocator) {
         .byteCode = byteCode,
         .values = DA_MAKE_DEFAULT(Value),
     };
-
     freeList = DA_MAKE_DEFAULT(ObjectPtr);
+    objectAllocator = allocator;
 
-    size_t i = 0;
-    size_t guard = 1337;
+    int i = 0;
+    int guard = 1337;
 
     VmResult result = {0};
 

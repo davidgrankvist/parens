@@ -29,6 +29,7 @@ typedef struct Allocator {
     void* (*Alloc)(size_t bytes, struct Allocator* self);
     void (*Reset)(struct Allocator* self);
     void (*Free)(struct Allocator* self);
+    void (*FreeObject)(void* ptr, size_t bytes, struct Allocator* self);
     void (*Debug)(struct Allocator* self);
 } Allocator;
 
@@ -42,6 +43,10 @@ void AllocatorReset(Allocator* allocator) {
 
 void AllocatorFree(Allocator* allocator) {
     allocator->Free(allocator);
+}
+
+void AllocatorFreeObject(void* ptr, size_t bytes, Allocator* allocator) {
+    allocator->FreeObject(ptr, bytes, allocator);
 }
 
 void AllocatorDebug(Allocator* allocator) {
@@ -62,12 +67,17 @@ static void FreeHeap(Allocator* self) {
     FreeMemory(self);
 }
 
+static void FreeObjectHeap(void* ptr, size_t bytes, Allocator* self) {
+    FreeMemory(ptr);
+}
+
 Allocator* CreateHeapAllocator() {
     Allocator* allocator = AllocateZeros(sizeof(Allocator));
     *allocator = (Allocator) {
         .Alloc = &AllocHeap,
         .Reset = &AllocatorStub,
         .Free = &FreeHeap,
+        .FreeObject = &FreeObjectHeap,
         .Debug = &AllocatorStub,
     };
 
@@ -170,12 +180,18 @@ static void FreeBump(Allocator* self) {
     FreeMemory(allocator);
 }
 
+static void FreeObjectBump(void* ptr, size_t bytes, Allocator* self) {
+    // TODO(incomplete): keep track of freed sections and recycle them later
+}
+
+
 Allocator* CreateBumpAllocator(size_t pageSize, size_t initialNumPages) {
     BumpAllocator* allocator = AllocateZeros(sizeof(BumpAllocator));
     *allocator = (BumpAllocator) {
         .base.Alloc = &AllocBump,
         .base.Reset = &ResetBump,
         .base.Free = &FreeBump,
+        .base.FreeObject = &FreeObjectBump,
         .base.Debug = &AllocatorStub,
         .pageSize = pageSize,
         .initialNumPages = initialNumPages,

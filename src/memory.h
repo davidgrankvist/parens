@@ -23,6 +23,8 @@ void* AllocatorAlloc(size_t bytes, Allocator* allocator);
 void AllocatorReset(Allocator* allocator);
 // Free allocator state. The allocator can not be re-used.
 void AllocatorFree(Allocator* allocator);
+// Frees the given object
+void AllocatorFreeObject(void* ptr, size_t bytes, Allocator* allocator);
 // Helper to inspect internal state when debugging.
 void AllocatorDebug(Allocator* allocator);
 
