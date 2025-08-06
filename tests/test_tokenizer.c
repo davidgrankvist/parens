@@ -108,4 +108,39 @@ void TokenizerTests() {
         },
         .numExpected = 3,
     });
+
+    RunTestCase((TokenizerTestCase){
+        .desc = "Set variable",
+        .input = "(set x 1)",
+        .expected = (TokenType[]){
+            TOKEN_PAREN_START, TOKEN_SET, TOKEN_SYMBOL, TOKEN_NUMBER, TOKEN_PAREN_END
+        },
+        .numExpected = 5,
+    });
+
+    RunTestCase((TokenizerTestCase){
+        .desc = "Anonymous function",
+        .input = "(fun (1) (2))",
+        .expected = (TokenType[]){
+            TOKEN_PAREN_START,
+            TOKEN_FUN,
+            TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_PAREN_END,
+            TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_PAREN_END,
+            TOKEN_PAREN_END,
+        },
+        .numExpected = 9,
+    });
+
+    RunTestCase((TokenizerTestCase){
+        .desc = "Function declaration",
+        .input = "(defun (1) (2))",
+        .expected = (TokenType[]){
+            TOKEN_PAREN_START,
+            TOKEN_DEFUN,
+            TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_PAREN_END,
+            TOKEN_PAREN_START, TOKEN_NUMBER, TOKEN_PAREN_END,
+            TOKEN_PAREN_END,
+        },
+        .numExpected = 9,
+    });
 }

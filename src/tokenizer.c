@@ -112,6 +112,9 @@ static TokenType TryEmitKeyword(size_t startOffset, String keywordPart, TokenTyp
 static TokenType EmitKeywordOrSymbolType() {
     switch(tokenStart[0]) {
         case 'p': return TryEmitKeyword(1, (String){ "rint", 4 }, TOKEN_PRINT);
+        case 's': return TryEmitKeyword(1, (String){ "et", 2 }, TOKEN_SET);
+        case 'f': return TryEmitKeyword(1, (String){ "un", 2 }, TOKEN_FUN);
+        case 'd': return TryEmitKeyword(1, (String){ "efun", 4 }, TOKEN_DEFUN);
         default: return TOKEN_SYMBOL;
     }
 }
@@ -200,6 +203,9 @@ const char* MapTokenTypeToStr(TokenType type) {
         case TOKEN_STAR: return "TOKEN_STAR";
         case TOKEN_SLASH: return "TOKEN_SLASH";
         case TOKEN_PRINT: return "TOKEN_PRINT";
+        case TOKEN_SET: return "TOKEN_SET";
+        case TOKEN_FUN: return "TOKEN_FUN";
+        case TOKEN_DEFUN: return "TOKEN_DEFUN";
         default: return NULL;
     }
 }
