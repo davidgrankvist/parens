@@ -6,6 +6,8 @@
 #ifndef values_h
 #define values_h
 
+#include <stdint.h>
+
 #include "memory.h"
 #include "common.h"
 #include "da.h"
@@ -20,7 +22,9 @@ typedef enum {
 } OperatorType;
 
 typedef enum {
+    COMPTIME_OPERATOR_NONE,
     COMPTIME_OPERATOR_FUN,
+    COMPTIME_OPERATOR_ENUM_COUNT,
 } ComptimeOperatorType;
 
 typedef enum {
@@ -36,7 +40,7 @@ typedef enum {
 typedef struct Object Object;
 
 typedef struct {
-    // TODO(incomplete)
+    uint32_t location;
 } Function;
 
 typedef struct {

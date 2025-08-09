@@ -9,6 +9,7 @@ ByteDa byteCode = {0};
 
 static double doubleDefault = 0;
 #define DOUBLE_SIZE 8
+#define INT_SIZE 4
 
 static void EmitAtom(Ast* ast, void* ctx);
 static void EmitCons(Ast* ast, void* ctx);
@@ -70,6 +71,10 @@ static void EmitF64(double d) {
     EmitByte(OP_F64);
     EmitLittleEndian((Byte*)&d, sizeof(double));
     EmitLittleEndian((Byte*)&doubleDefault, DOUBLE_SIZE - sizeof(double)); // padding
+}
+
+static void EmitU32Bytes(uint32_t n) {
+    EmitLittleEndian((Byte*)&n, INT_SIZE);
 }
 
 static void EmitOperator(OperatorType operator, Ast* ast, void* ctx) {
@@ -143,7 +148,57 @@ static void EmitProperListElements(Ast* ast, void* ctx) {
     }
 }
 
+static void EmitComptimeOperator(Ast* ast, void* ctx) {
+    ComptimeOperatorType op = ast->as.cons.head->as.atom.value.as.comptimeOperator;
+    if (op != COMPTIME_OPERATOR_FUN) {
+        ReportError("Unsupported comptime operator. Only \"fun\" is supported.", ast, ctx);
+        return;
+    }
+
+    Ast* paramsAndBody = ast->as.cons.tail;
+
+    if (paramsAndBody->type != AST_CONS) {
+        ReportError("Expected parameters and a function body", ast, ctx);
+        return;
+    }
+
+    ByteCodeResult* result = (ByteCodeResult*)ctx;
+
+    // TODO(incomplete): params are ignored for now
+    Ast* params = paramsAndBody->as.cons.head;
+
+    Ast* functionBody = paramsAndBody->as.cons.tail;
+    uint32_t functionBodyStart = byteCode.count;
+    EmitAstHelper(functionBody, ctx);
+    if (result->type == RESULT_ERROR) {
+        return;
+    }
+    byteCode.count--; // throw away implicit nil
+
+    EmitByte(OP_FUN);
+    EmitU32Bytes(functionBodyStart);
+}
+
+static bool IsComptimeOperator(Ast* ast) {
+    if (ast->type != AST_ATOM) {
+        return false;
+    }
+    Value val = ast->as.atom.value;
+    if (val.type != VALUE_COMPTIME_OPERATOR) {
+        return false;
+    }
+
+    return val.as.comptimeOperator > COMPTIME_OPERATOR_NONE
+        && val.as.comptimeOperator < COMPTIME_OPERATOR_ENUM_COUNT;
+}
+
 static void EmitFunctionCall(Ast* ast, void* ctx) {
+    Ast* head = ast->as.cons.head;
+    if (IsComptimeOperator(head)) {
+        EmitComptimeOperator(ast, ctx);
+        return;
+    }
+
     EmitProperListElements(ast, ctx);
     ByteCodeResult* result = (ByteCodeResult*)ctx;
     if (result->type == RESULT_ERROR) {
@@ -249,6 +304,7 @@ static const char* MapOpCodeToStr(OpCode op) {
         case OP_JUMP: return "OP_JUMP";
         case OP_POP: return "OP_POP";
         case OP_PRINT: return "OP_PRINT";
+        case OP_FUN: return "OP_FUN";
         default: break;
     }
     Assertf(!IsOpCode(op), "Missing string for op code %d", op);

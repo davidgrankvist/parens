@@ -89,6 +89,8 @@ static ByteCodeResult MakeSuccess(Byte* bytes, size_t count) {
 
 #define F64_LITTLE_ENDIAN_1 0, 0, 0, 0, 0, 0, 240, 63
 #define F64_LITTLE_ENDIAN_2 0, 0, 0, 0, 0, 0, 0, 64
+#define ZERO_32 0, 0, 0, 0
+#define ZERO_16 0, 0
 
 void BytecodeGeneratorTests() {
     PRINT_TEST_TITLE();
@@ -159,5 +161,38 @@ void BytecodeGeneratorTests() {
                 OP_CONS_CELL,
         }, 24),
     });
+
+    RunTestCase((BytecodeGeneratorTestCase) {
+        .desc = "Simple anonymous function",
+        .input = "(fun () 1)",
+        .expected = MakeSuccess((Byte[]){
+                OP_F64,
+                F64_LITTLE_ENDIAN_1,
+                OP_FUN,
+                ZERO_32
+        }, 14),
+    });
+
+
+    RunTestCase((BytecodeGeneratorTestCase) {
+        .desc = "Set global",
+        .input = "(set x 1)",
+        .expected = MakeSuccess((Byte[]){
+                OP_F64,
+                F64_LITTLE_ENDIAN_1,
+                OP_SET_GLOBAL,
+                ZERO_16
+        }, 12),
+    });
+
+    RunTestCase((BytecodeGeneratorTestCase) {
+        .desc = "Define function",
+        .input = "(defun one () 1)",
+        .expected = MakeSuccess((Byte[]){
+                OP_NIL,
+        }, 1),
+    });
+
+
 }
 

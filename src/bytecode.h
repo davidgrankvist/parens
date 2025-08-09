@@ -9,15 +9,17 @@
 
 // -- OP codes --
 
+// All multi-byte values are little endian
 typedef enum {
     OP_NIL,
     OP_TRUE,
     OP_FALSE,
-    OP_F64, // read next 8 bytes as little endian
+    OP_F64, // read next 8 bytes
     OP_CONSTANT_16, // read next 2 bytes for the index
     OP_BUILTIN_FN, // read next 1 byte for the built in operator/function
-    OP_GLOBAL,
-    OP_SET_GLOBAL,
+    OP_FUN, // read next 4 bytes for the location
+    OP_GLOBAL, // read nexy 2 bytes for the global index
+    OP_SET_GLOBAL, // read next 2 bytes for the global index
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,
