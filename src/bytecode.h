@@ -16,6 +16,8 @@ typedef enum {
     OP_F64, // read next 8 bytes as little endian
     OP_CONSTANT_16, // read next 2 bytes for the index
     OP_BUILTIN_FN, // read next 1 byte for the built in operator/function
+    OP_GLOBAL,
+    OP_SET_GLOBAL,
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,

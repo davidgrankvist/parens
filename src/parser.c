@@ -105,6 +105,13 @@ static ParseResult ParseOperator(OperatorType op) {
     return EmitParseSuccess(ast);
 }
 
+static ParseResult ParseComptimeOperator(ComptimeOperatorType op) {
+    Token* token = Peek();
+    Value val = MAKE_VALUE_COMPTIME_OPERATOR(op);
+    Ast* ast = CreateAtom(val, token, astAllocator);
+    return EmitParseSuccess(ast);
+}
+
 static ParseResult ParseAtom() {
     ParseResult result = {0};
     Ast* ast = NULL;
@@ -139,6 +146,12 @@ static ParseResult ParseAtom() {
         case TOKEN_PRINT:
             result = ParseOperator(OPERATOR_PRINT);
             break;
+        case TOKEN_SET:
+            result = ParseOperator(OPERATOR_SET_GLOBAL);
+            break;
+        case TOKEN_FUN:
+            result = ParseComptimeOperator(COMPTIME_OPERATOR_FUN);
+            break;
         default:
             result = EmitParseError("Unexpected token while parsing atom");
             break;
@@ -146,6 +159,34 @@ static ParseResult ParseAtom() {
 
     Advance();
     return result;
+}
+
+static ParseResult ParseList();
+
+// desugars (defun f ....) to (set f (fun ....))
+static ParseResult ParseDefun() {
+    Token* token = Previos();
+
+    Value setOp = MAKE_VALUE_OPERATOR(OPERATOR_SET_GLOBAL);
+    Value funOp = MAKE_VALUE_COMPTIME_OPERATOR(COMPTIME_OPERATOR_FUN);
+    Ast* setAtom = CreateAtom(setOp, token, astAllocator);
+    Ast* funAtom = CreateAtom(funOp, token, astAllocator);
+
+    ParseResult symbol = ParseExpr();
+    if (symbol.type == RESULT_ERROR) {
+        return symbol;
+    }
+
+    ParseResult paramsAndBody = ParseList();
+    if (paramsAndBody.type == RESULT_ERROR) {
+        return paramsAndBody;
+    }
+
+    Ast* function = CreateCons(funAtom, paramsAndBody.as.success.ast, astAllocator);
+    Ast* symbolAndFunction = CreateCons(symbol.as.success.ast, function, astAllocator);
+    Ast* setAst = CreateCons(setAtom, symbolAndFunction, astAllocator);
+
+    return EmitParseSuccess(setAst);
 }
 
 /*
@@ -184,6 +225,10 @@ static ParseResult ParseListElements() {
  * (1 2 3) = (1 . (2 . (3 . nil))
  */
 static ParseResult ParseList() {
+    if (Match(TOKEN_DEFUN)) {
+        return ParseDefun();
+    }
+
     ParseResult head = ParseExpr();
     if (head.type == RESULT_ERROR) {
         return head;

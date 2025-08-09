@@ -16,7 +16,12 @@ typedef enum {
     OPERATOR_MULTIPLY,
     OPERATOR_DIVIDE,
     OPERATOR_PRINT,
+    OPERATOR_SET_GLOBAL,
 } OperatorType;
+
+typedef enum {
+    COMPTIME_OPERATOR_FUN,
+} ComptimeOperatorType;
 
 typedef enum {
     VALUE_NIL,
@@ -24,9 +29,15 @@ typedef enum {
     VALUE_BOOL,
     VALUE_OBJECT,
     VALUE_OPERATOR,
+    VALUE_COMPTIME_OPERATOR,
+    VALUE_FUNCTION,
 } ValueType;
 
 typedef struct Object Object;
+
+typedef struct {
+    // TODO(incomplete)
+} Function;
 
 typedef struct {
     ValueType type;
@@ -35,19 +46,21 @@ typedef struct {
         bool boolValue;
         Object* object;
         OperatorType operator;
+        ComptimeOperatorType comptimeOperator;
+        Function function;
     } as;
 } Value;
-
-typedef struct {
-    Value head;
-    Value tail;
-} ConsCell;
 
 typedef enum {
     OBJECT_STRING,
     OBJECT_SYMBOL,
     OBJECT_CONS,
 } ObjectType;
+
+typedef struct {
+    Value head;
+    Value tail;
+} ConsCell;
 
 struct Object {
     ObjectType type;
@@ -65,6 +78,7 @@ struct Object {
 #define MAKE_VALUE_BOOL(b) (Value) { .type = VALUE_BOOL, .as.boolValue = b }
 #define MAKE_VALUE_OBJECT(obj) (Value) { .type = VALUE_OBJECT, .as.object = obj }
 #define MAKE_VALUE_OPERATOR(op) (Value) { .type = VALUE_OPERATOR, .as.operator = op }
+#define MAKE_VALUE_COMPTIME_OPERATOR(op) (Value) { .type = VALUE_COMPTIME_OPERATOR, .as.comptimeOperator = op }
 
 Object* CreateStringObject(String s, Allocator* allocator);
 Object* CreateSymbolObject(String s, Allocator* allocator);

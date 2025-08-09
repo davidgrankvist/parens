@@ -43,6 +43,8 @@ static bool AstAtomEquals(Ast* first, Ast* second) {
         }
         case VALUE_OPERATOR:
             return v1.as.operator == v2.as.operator;
+        case VALUE_COMPTIME_OPERATOR:
+            return v1.as.comptimeOperator == v2.as.comptimeOperator;
         default:
             break;
     }
@@ -272,6 +274,7 @@ static Ast* QuoteAst(Ast* ast) {
 #define STRING(cs) CreateStringAtom(MakeString(cs), DUMMY_TOKEN, inputAllocator)
 #define QUOTE(ast) QuoteAst(ast)
 #define OPERATOR(op) CreateAtom(MAKE_VALUE_OPERATOR(op), DUMMY_TOKEN, inputAllocator)
+#define FUN() CreateAtom(MAKE_VALUE_COMPTIME_OPERATOR(COMPTIME_OPERATOR_FUN), DUMMY_TOKEN, inputAllocator)
 
 void ParserTests() {
     PRINT_TEST_TITLE();
@@ -410,6 +413,39 @@ void ParserTests() {
     });
 
     RunTestCase((ParserTestCase) {
+        .desc = "Anonymous function",
+        .input = "(fun () 1)",
+        .expected = {
+            .type = RESULT_SUCCESS,
+            .as.success.ast = CONS(FUN(), CONS(NIL(), CONS(F64(1), NIL()))),
+        },
+    });
+
+    RunTestCase((ParserTestCase) {
+        .desc = "Set global",
+        .input = "(set x 1)",
+        .expected = {
+            .type = RESULT_SUCCESS,
+            .as.success.ast = CONS(OPERATOR(OPERATOR_SET_GLOBAL),
+                                   CONS(SYMBOL("x"), CONS(F64(1), NIL())))
+        },
+    });
+
+    RunTestCase((ParserTestCase) {
+        .desc = "Define function",
+        .input = "(defun one () 1)",
+        .expected = {
+            .type = RESULT_SUCCESS,
+            .as.success.ast = CONS(
+                OPERATOR(OPERATOR_SET_GLOBAL),
+                    CONS(SYMBOL("one"),
+                        CONS(FUN(), CONS(NIL(), CONS(F64(1), NIL())))
+                    )
+                )
+        },
+    });
+
+    RunTestCase((ParserTestCase) {
         .desc = "Inspect arena memory - Simple cons, single page",
         .input = "(a . b)",
         .expected = {
@@ -446,3 +482,4 @@ void ParserTests() {
 #undef STRING
 #undef QUOTE
 #undef OPERATOR
+#undef FUN

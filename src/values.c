@@ -44,6 +44,7 @@ static const char* MapOperatorTypeToStr(OperatorType operator) {
         case OPERATOR_MULTIPLY: return "*";
         case OPERATOR_DIVIDE: return "/";
         case OPERATOR_PRINT: return "print";
+        case OPERATOR_SET_GLOBAL: return "set";
         default: return NULL;
     }
 }
@@ -94,6 +95,20 @@ static void PrintObject(Object* obj) {
     }
 }
 
+static const char* MapComptimeOperatorTypeToStr(ComptimeOperatorType operator) {
+    switch(operator) {
+        case COMPTIME_OPERATOR_FUN: return "fun";
+        default: return NULL;
+    }
+}
+
+static void PrintComptimeOperator(ComptimeOperatorType operator) {
+    const char* str = MapComptimeOperatorTypeToStr(operator);
+
+    Assertf(str != NULL, "Not implemented for type %d", operator);
+    printf("%s", str);
+}
+
 static const char* MapValueTypeToStr(ValueType valueType) {
     switch(valueType) {
         case VALUE_NIL: return "VALUE_NIL";
@@ -101,6 +116,7 @@ static const char* MapValueTypeToStr(ValueType valueType) {
         case VALUE_BOOL: return "VALUE_BOOL";
         case VALUE_OBJECT: return "VALUE_OBJECT";
         case VALUE_OPERATOR: return "VALUE_OPERATOR";
+        case VALUE_COMPTIME_OPERATOR: return "VALUE_COMPTIME_OPERATOR";
         default: return NULL;
     }
 }
@@ -119,8 +135,17 @@ void PrintValue(Value value) {
         case VALUE_OPERATOR:
             PrintOperator(value.as.operator);
             break;
-        default:
-            AssertFailf("Not implemented for value type %s", MapValueTypeToStr(value.type));
+        case VALUE_COMPTIME_OPERATOR:
+            PrintComptimeOperator(value.as.comptimeOperator);
             break;
+        default: {
+            const char* str = MapValueTypeToStr(value.type);
+            if (str == NULL) {
+                AssertFailf("Not implemented for value type enum %d (no string mapping found)", value.type);
+            } else {
+                AssertFailf("Not implemented for value type %s", str);
+            }
+            break;
+        }
     }
 }
